@@ -3,6 +3,12 @@ This repository is set up to provide an R-based process to take timelapse photos
 
 This is a process that can take some time; running in parallel may speed initial processing of photos.
 
+### Coded by:
+
+* Eric Holmes
+* Ryan Peek
+* Nick Santos
+
 
 
 ## Examples
