@@ -1,0 +1,110 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Timelapse hydro by ucd-cws</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1 class="header">Timelapse hydro</h1>
+        <p class="header">Code to make timelapse hydrography movies via R.</p>
+
+        <ul>
+          <li class="download"><a class="buttons" href="https://github.com/ucd-cws/timelapse_hydro/zipball/master">Download ZIP</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/ucd-cws/timelapse_hydro/tarball/master">Download TAR</a></li>
+          <li><a class="buttons github" href="https://github.com/ucd-cws/timelapse_hydro">View On GitHub</a></li>
+        </ul>
+
+        <p class="header">This project is maintained by <a class="header name" href="https://github.com/ucd-cws">ucd-cws</a></p>
+
+
+      </header>
+      <section>
+        <h1>
+<a id="timelapse-hydro" class="anchor" href="#timelapse-hydro" aria-hidden="true"><span class="octicon octicon-link"></span></a>Timelapse Hydro</h1>
+
+<p>This repository is set up to provide an R-based process to take timelapse photos from any given site, sync with flow or temperature data, and overlay plots in the photos before stitching together into a mp4/avi.</p>
+
+<p>This is a process that can take some time; running in parallel may speed initial processing of photos.</p>
+
+<h3>
+<a id="coded-by" class="anchor" href="#coded-by" aria-hidden="true"><span class="octicon octicon-link"></span></a>Coded by:</h3>
+
+<ul>
+<li>Eric Holmes</li>
+<li>Ryan Peek</li>
+<li>Nick Santos</li>
+</ul>
+
+<h2>
+<a id="the-script-process" class="anchor" href="#the-script-process" aria-hidden="true"><span class="octicon octicon-link"></span></a>The Script Process</h2>
+
+<p>There are several components, but the main requirements are <strong>imagemagick</strong> and <strong>ffmpeg</strong>.</p>
+
+<blockquote>
+<p>Main Steps:</p>
+</blockquote>
+
+<ol>
+<li>Create folders and copy the timelapse photos to the <strong><code>photos</code></strong> folder.</li>
+<li>Get a list of the photos in the folder and use imagemagick to pull photo info (datetime, baro, exposure).</li>
+<li>Get logger/temperature data for creation of overlay and subset to photos (can subset using specific date window as well).</li>
+<li>Make <strong>thermohydrograph</strong> plots or <strong>hydrograph</strong> plots for each photo, synced to photo timestamp.</li>
+<li>Use <code>-composite</code> call to imagemagick to get timelapse photo and overlay plots</li>
+<li>If you have <code>ffmpeg</code>, you can create quick timelapse. If not, many options like <strong>VirtualDub, Moviemakier, iMovie, etc.</strong><br>
+</li>
+</ol>
+
+<h2>
+<a id="examples" class="anchor" href="#examples" aria-hidden="true"><span class="octicon octicon-link"></span></a>Examples</h2>
+
+<p>Here are some example plots and photos.</p>
+
+<ul>
+<li>
+<strong>A Hydrograph Plot</strong> </li>
+</ul>
+
+<p><img src="https://github.com/ucd-cws/timelapse_hydro/PICT2142.JPG.png" alt="Hydrograph"></p>
+
+<ul>
+<li>
+<strong>A Thermohydrograph Plot</strong> </li>
+</ul>
+
+<p><img src="https://github.com/ucd-cws/timelapse_hydro/PICT2171.JPG.png" alt="Thermohydrograph"></p>
+
+<ul>
+<li>
+<strong>And a composite example</strong> </li>
+</ul>
+
+<p><img src="https://github.com/ucd-cws/timelapse_hydro/PICT2597.JPG.png" alt="Composite"></p>
+
+<h3>
+<a id="video" class="anchor" href="#video" aria-hidden="true"><span class="octicon octicon-link"></span></a>Video</h3>
+
+<p>Don't have one uploaded yet but for a comparable example video using code developed by Nick Santos (using <code>python</code> and <code>perl</code>):</p>
+
+<p> </p><p><a href="https://vimeo.com/120654456">Cosumnes River Streamlapse 2015</a> from <a href="https://vimeo.com/user12653303">Center for Watershed Sciences</a> on <a href="https://vimeo.com">Vimeo</a>.</p> <p>A Streamlapse video of the Cosumnes River for the early 2015 floods</p>
+
+<p> </p><p><a href="https://vimeo.com/46239865">Time Lapse Hydrography for North Fork American and South Fork Yuba Rivers in California</a> from <a href="https://vimeo.com/user12653303">Center for Watershed Sciences</a> on <a href="https://vimeo.com">Vimeo</a>.</p> <p>The Center for Watershed Sciences has a set of study sites on rivers throughout the northern Sierra Nevada range in California. Part of this research includes monitoring the river's edge habitat with remote game cameras. After a year's worth of captures, we realized we could do some other processing with these videos. This video shows images and hydrographs from two nearby rivers capturing the same moment in time.<br> <br> About the images:<br> The images in this video are taken by a pair of identical game cameras that take an hourly picture, on the hour, 24 hours a day. The left images are from the North Fork American River in the 1000-2000 foot elevation band. The images on the right are from the South Fork Yuba River, about 20 miles north of the first camera in the Sierra Nevada. The main difference we're interested in from these cameras is that the South Fork Yuba is regulated - it has a dam upstream controlling the flow of the river - while the North Fork American is not regulated in this area. You can see the differences in how the flows change. The South Fork Yuba changes flows rapidly as flows lower while the North Fork American drops more slowly. At high flows (storm events) the North Fork American changes more rapidly - a good signal - while the South Fork Yuba is buffered by the dam's controlled flow.<br> <br> How the video is made:<br> For this video, we pulled in river stage data from USGS flow gages at nearby, but not exact, locations. Using Python and matplotlib, we created a hydrograph for each time. Then, using Perl and ImageMagick, we overlaid the hydrographs with images based on the timestamps and then paired images together based upon closest timestamps (which also leads to the stuttering you see on the right side). Finally, we used Virtualdub to turn the completed frames into a 10 FPS movie.</p>
+      </section>
+      <footer>
+        <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+		
+  </body>
+</html>
