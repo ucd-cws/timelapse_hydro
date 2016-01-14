@@ -1,6 +1,9 @@
 # History files
 .Rhistory
 .Rapp.history
+
+# project files
+.Rproj
 .DS_Store
 scripts/.DS_Store
 
@@ -13,3 +16,4 @@ scripts/.DS_Store
 # produced vignettes
 vignettes/*.html
 vignettes/*.pdf
+.Rproj.user
