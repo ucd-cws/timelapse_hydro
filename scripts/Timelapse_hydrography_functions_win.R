@@ -70,7 +70,7 @@ photolist_sub <- photolist[photolist$brightness > 40, ]
 # SUBSET DATE WINDOW OF INTEREST ------------------------------------------
 
 ## If subsetting to certain date window use these lines
-start.date<-ymd_hms("2015-11-01 09:00:00")
+start.date<-ymd_hms("2015-12-01 09:00:00")
 end.date<-ymd_hms("2015-12-15 09:00:00")
 
 photolist_sub %<>% filter(datetime >= start.date & datetime <= end.date)
@@ -149,7 +149,7 @@ grid.arrange(
 
 fig.Thermohydro()
 
-fig.Thermohydro(test.subset=3)
+fig.Thermohydro(test.subset=10)
 
 #runtime <- proc.time() - p
 #print(paste("finished in", format(runtime[3]/60, digits = 4), "minutes"))
@@ -160,7 +160,7 @@ fig.Thermohydro(test.subset=3)
 
 fig.Hydro()
 
-#fig.Hydro(test.subset=3) # short test
+fig.Hydro(test.subset=10) # short test
 
 #runtime <- proc.time() - p
 #print(paste("finished in", format(runtime[3]/60, digits = 4), "minutes"))
@@ -172,7 +172,7 @@ fig.Hydro()
 p <- proc.time()
 
 # Run photoComposite function
-photoComposite(parallel = T, cores=2,thermo = FALSE)
+photoComposite(parallel = T, cores=3,thermo = FALSE)
 
 runtime <- proc.time() - p
 print(paste("finished in", format(runtime[3]/60, digits = 4), "minutes"))
@@ -181,37 +181,36 @@ print(paste("finished in", format(runtime[3]/60, digits = 4), "minutes"))
 
 # if you want to rename lots of files
 dir_w_files<-"./output/composite"
-oldfiles<-list.files(dir_w_files,pattern = ".png",full.names = T)
+oldfiles<-list.files(dir_w_files,pattern = ".JPG",full.names = T)
 newfilenumbers<-seq(from = 1,to = length(oldfiles),by = 1)
 newfilenames<-vector()
 for(i in 1:length(oldfiles)){
   newfilenames[i]<-paste0(sprintf("PICT%04d", i),".JPG")
 }
 
-file.rename(from = file.path(list.files(dir_w_files,pattern='.png',full.names = T)), 
+# now rename in numerical 4 digit order
+file.rename(from = file.path(list.files(dir_w_files,pattern='.JPG',full.names = T)), 
             to = file.path(dir_w_files, newfilenames))
 
 # CREATE mp4 USING FFMPEG -------------------------------------------------
-setwd("./PROJECTS/timelapse_hydro/output/composite")
-## ffmpeg needs to be installed and linked in your path
-## pictures need to be renamed in order so create dummy folder in composite folder
-system(command =  paste("mkdir img_in_order")) # make a dir to rename photos 
+setwd("./output/composite")
 
-# now rename photos (if more than 9999 photos add digit) # only works on mac
-system(command = paste('x=1; for i in *png; do counter=$(printf %04d $x); ln "$i" img_in_order/img"$counter".png; x=$(($x+1)); done'))
 
-# now make movie mp4 (images need to be numerically ordered)
-system(command = paste('ffmpeg -f image2 -i  img_in_order/img%04d.png -s 800x600 tuolapse_2015_fall_.mp4'))
-#system(command = paste('ffmpeg -f image2 -r 0.1 -i PICT%04d.JPG.png -s 800x600 2tstlapse.mp4'))
+## MAKE SURE THE ONLY THING IN THE COMPOSITE FOLDER IS JPGs, no other files or ffmpeg will crash
+
+## now make movie mp4 (images need to be numerically ordered, default ~25 frames per sec)
+shell(cmd = paste('ffmpeg -f image2 -i  PICT%04d.JPG -s 800x600 tuolapse_2015_short.mp4'))
+
+## make slower (longer exposure per image, frames per second)
+shell(cmd = paste('ffmpeg -f image2 -r 12 -i PICT%04d.JPG -s 800x600 tuolapse_2015_short.mp4'))
+
 
 ## additional ffmpeg info
-# ffmpeg -y -loop 1 -f image2 -r 0.5 -i image-%03d.jpg -s:v 1280x720 -b:v 1M \
 #  -i soundtrack.mp3 -t 01:05:00 -map 0:0 -map 1:0 out.avi
-
-## -loop_input – loops the images
-## -r 0.5 – sets the framerate to 0.5, which means that each image will be shown for 2 seconds. Just take the inverse, 
+# -loop_input – loops the images
+# -r 0.5 – sets the framerate to 0.5, which means that each image will be shown for 2 seconds. Just take the inverse, 
 ##  for example if you want each image to last for 3 seconds, set it to 0.33
-## -i soundtrack.mp3 # soundtrack file you can add whatever
+# -i soundtrack.mp3 # soundtrack file you can add whatever
 ## -t 01:05:00 #set the output length in hh:mm:ss format
 
 

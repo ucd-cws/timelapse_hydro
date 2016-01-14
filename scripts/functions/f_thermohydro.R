@@ -13,7 +13,7 @@ fig.Thermohydro <- function(test.subset = nrow(photolist_sub)){
     
     print(paste("making graph", j, "of", nrow(photolist_sub)))
     
-    png(paste(getwd(), "/output/temp/thermo/",photolist_sub[j,"photo"],".png", sep = ""), 
+    png(paste(getwd(), "/output/temp/thermo/",photolist_sub[j,"photo"],sep = ""), 
         height=4, width=6, units="in", res=500, family="sans", bg = "transparent")
     
     grid.arrange(
@@ -22,7 +22,7 @@ fig.Thermohydro <- function(test.subset = nrow(photolist_sub)){
         scale_colour_gradientn(name=expression(paste("WaterTemp(",degree,"C)")),colours=palette(palette), values=breaks, 
                                rescaler = function(x, ...) x, oob = identity,limits=range(breaks), breaks=breaks, space="Lab") +
         geom_ribbon(data = dff[dff$datetime <= dff$datetime[j],], 
-                    aes(x = datetime, ymax = lev.avg, ymin = min(dff$lev.avg)), fill = "gray30", alpha = .5) +
+                    aes(x = datetime, ymax = lev.avg, ymin = min(dff$lev.avg)), fill = "gray30", alpha = .3) +
         geom_line(data = dff[dff$datetime <= dff$datetime[j],], 
                   aes(x = datetime, y = lev.avg, color=temp.avg), size = 1) +
         #scale_x_datetime(limits = c(as.POSIXct(min(dff$datetime)),as.POSIXct(max(dff$datetime))), labels = date_format("%b-%Y"))+

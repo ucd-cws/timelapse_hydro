@@ -32,7 +32,7 @@ source("./scripts/functions/f_photoComposite_osx.R")
 
 ## check if all proj folders are created in current working dir.
 ## best if you navigate to root dir of interest first
-setwd("./PROJECTS/timelapse_hydro")
+#setwd("./PROJECTS/timelapse_hydro")
 
 ## run folder function
 proj.Folders(new=FALSE)
@@ -171,8 +171,8 @@ fig.Hydro()
 p <- proc.time()
 
 # Run photoComposite function
-photoComposite(parallel = T, cores=3, thermo=F)
-photoComposite(parallel = F, thermo=F)
+photoComposite(parallel = T, cores=3, thermo=T)
+photoComposite(parallel = F, thermo=T)
 
 runtime <- proc.time() - p
 print(paste("finished in", format(runtime[3]/60, digits = 4), "minutes"))
