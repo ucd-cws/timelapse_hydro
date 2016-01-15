@@ -35,19 +35,23 @@ source("./scripts/functions/f_photoComposite_osx.R")
 #setwd("./PROJECTS/timelapse_hydro")
 
 ## run folder function
-proj.Folders(new=FALSE)
+proj.Folders(new=F)
 
 # GATHER PHOTO INFO (DATETIME, BARO, BRIGHTNESS) ------------------------
 
-p <- proc.time()
+# p <- proc.time()
+
+# Select sitename (should be same name as folder the raw photos are in)
+site<-"NFA"
 
 ## list all photo files in the dir
-files <- list.files(path = paste0(getwd(),"/photos"), pattern = ".jpg",ignore.case = TRUE, full.names = T)
-photo_numbers<-list.files(path = paste0(getwd(),"/photos"), pattern = ".jpg",ignore.case = TRUE, full.names = F) # photos only
+files <- list.files(path = paste0(getwd(),"/photos/",site), pattern = ".jpg",ignore.case = TRUE, full.names = T)
+#photo_numbers<-list.files(path = paste0(getwd(),"/photos/NFA"), pattern = ".jpg",ignore.case = TRUE, full.names = F) # photos only
 
 ## Run photoInfo function
-photolist <- photoInfo(parallel=T,cores = 3, test.subset = 10) # this is for testing
-photolist <- photoInfo(cores = 4) # almost 40 min for ~3700 photos
+photolist <- photoInfo(parallel=F, test.subset = 10) # this is for testing
+
+photolist <- photoInfo(cores = 3) # almost 40 min for ~3700 photos
 
 ## round to whole hours
 photolist$timeround <- floor_date(x = photolist$datetime, unit = "hour")
@@ -56,12 +60,13 @@ photolist$timeround <- floor_date(x = photolist$datetime, unit = "hour")
 photolist_sub <- photolist[photolist$brightness > 40, ]
 
 ## check runtime
-runtime <- proc.time() - p
-print(paste("finished in", format(runtime[3]/60, digits = 4), "minutes"))
+#runtime <- proc.time() - p
+#print(paste("finished in", format(runtime[3]/60, digits = 4), "minutes"))
 
 ## Save to .RData file so you don't have to do this again and wait
-# save(photolist, photolist_sub, file = "./data/tuo_20151217_photolist.Rda")
-load("./data/tuo_20151217_photolist.Rda")
+#save(photolist, photolist_sub, file = "./data/nfa_20150805_photolist.rda")
+
+load("./data/nfa_20150805_photolist.rda")
 
 # SUBSET DATE TO WINDOW OF INTEREST ---------------------------------------
 
@@ -75,15 +80,16 @@ photolist_sub %<>% filter(datetime >= start.date & datetime <= end.date)
 # GET LOGGER DATA FROM CSV AND SUBSET TO PHOTOS ---------------------------
 
 ## get the logger file name of interest
-logger.name <- "2015_TUO_solinst_12_17.csv"
+logger.name <- "2015_NFA_solinst_08_05.csv"
 
 ## set interval in minutes
 interval = 15
 
 ## read in csv
-level <- read.csv(paste(getwd(), "/data/", logger.name, sep = ""), stringsAsFactors = F, skip = 11) # check lines to skip
+level <- read.csv(paste(getwd(), "/data/", logger.name, sep = ""), stringsAsFactors = F, skip = 13) # check lines to skip
 level$datetime <- as.POSIXct(paste(level$Date, level$Time), format = "%Y/%m/%d %H:%M:%S")
 level$datetimeround <- as.POSIXct(round(as.double(level$datetime)/(interval*60))*(interval*60),origin=(as.POSIXct(tz="GMT",'1970-01-01')))
+colnames(level)[4:5]<-toupper(colnames(level)[4:5])
 
 ## subset to the photo list 
 levsub <- na.omit(level[level$datetimeround >= range(photolist$timeround)[1] & level$datetimeround <= range(photolist$timeround)[2],])
@@ -106,11 +112,12 @@ dfhr<- levsub %>%
                                             hour,":00"),format = "%Y-%m-%j %H:%M"))) %>%
   select(datetime,year,month,yday,lev.avg:temp.max) %>%
   as.data.frame()
+h(dfhr)
 
 ## merge with photolist_sub to make into one dataframe for everything
 dff<-merge(dfhr, photolist_sub[,c(1,3:5)], by.x="datetime", by.y="timeround", all = F)
 
-# head(dff)
+head(dff)
 
 # TEST PLOTS --------------------------------------------------------------
 
@@ -144,25 +151,15 @@ grid.arrange(
 
 # THERMOHYDROGRAPH --------------------------------------------------------
 
-#p <- proc.time()
+fig.Thermohydro()
 
-fig.Thermo()
-
-#fig.Thermo(test.subset=3)
-
-#runtime <- proc.time() - p
-#print(paste("finished in", format(runtime[3]/60, digits = 4), "minutes"))
+fig.Thermohydro(test.subset=50)
 
 # HYDROGRAPH ONLY ---------------------------------------------------------
 
-#p <- proc.time()
-
 fig.Hydro()
 
-#fig.Hydro(test.subset=3) # short test
-
-#runtime <- proc.time() - p
-#print(paste("finished in", format(runtime[3]/60, digits = 4), "minutes"))
+fig.Hydro(test.subset=50) # short test
 
 # OVERLAY IMAGES USING IMAGEMAGICK -composite COMMAND ---------------------
 
@@ -171,8 +168,8 @@ fig.Hydro()
 p <- proc.time()
 
 # Run photoComposite function
-photoComposite(parallel = T, cores=3, thermo=T)
-photoComposite(parallel = F, thermo=T)
+photoComposite(parallel = T, cores=3, thermo=F, site="NFA", plotlocation = "northwest")
+photoComposite(parallel = F, thermo=T, site = "NFA", plotlocation = "northwest")
 
 runtime <- proc.time() - p
 print(paste("finished in", format(runtime[3]/60, digits = 4), "minutes"))
@@ -180,53 +177,30 @@ print(paste("finished in", format(runtime[3]/60, digits = 4), "minutes"))
 # OPTIONAL RENAME OF FILES ------------------------------------------------
 
 ## if you want to rename lots of files
-dir_w_files<-"./output/composite/hydro"
-oldfiles<-list.files(dir_w_files,pattern = ".png",full.names = T)
+dir_w_files<-"./output/composite"
+oldfiles<-list.files(dir_w_files,pattern = ".JPG",full.names = T)
 newfilenumbers<-seq(from = 1,to = length(oldfiles),by = 1)
 newfilenames<-vector()
 for(i in 1:length(oldfiles)){
   newfilenames[i]<-paste0(sprintf("PICT%04d", i),".JPG")
 }
 
-file.rename(from = file.path(list.files(dir_w_files,pattern='.png',full.names = T)), 
+# now rename in numerical 4 digit order
+file.rename(from = file.path(list.files(dir_w_files,pattern='.JPG',full.names = T)), 
             to = file.path(dir_w_files, newfilenames))
 
 # CREATE mp4 USING FFMPEG -------------------------------------------------
 
-## move to dir with composite folders
-setwd("./output/composite/hydro")
+## move to dir with composite photos
+setwd("./output/composite/")
 
 ## pictures need to be renamed in order so create dummy folder in composite folder
-system(command =  paste("mkdir img_in_order")) # make a dir to rename photos 
+# system(command =  paste("mkdir img_in_order")) # make a dir to rename photos 
+# system(command = paste('x=1; for i in *png; do counter=$(printf %04d $x); ln "$i" img_in_order/img"$counter".png; x=$(($x+1)); done'))
 
-## now rename photos (if more than 9999 photos add digit) # only works on mac
-system(command = paste('x=1; for i in *png; do counter=$(printf %04d $x); ln "$i" img_in_order/img"$counter".png; x=$(($x+1)); done'))
-system(command = paste('x=1; for i in *JPG; do counter=$(printf %04d $x); ln "$i" img_in_order/img"$counter".png; x=$(($x+1)); done'))
+## now make movie mp4 (images need to be numerically ordered, default ~25 frames per sec)
+system(command = paste('ffmpeg -f image2 -i  PICT%04d.JPG -s 800x600 nfalapse_2015_short.mp4'))
 
-# now make movie mp4 (images need to be numerically ordered in "img_in_order" folder)
-system(command = paste('ffmpeg -f image2 -i img_in_order/img%04d.png -s 800x600 tuolapse_2015_fall.mp4'))
-
-## make slower (longer exposure per image)
-system(command = paste('ffmpeg -f image2 -r 1.0 -i img_in_order/img%04d.png -s 800x600 tuolapse_2015_short.avi'))
-system(command = paste('ffmpeg -f image2 -r 1.0 -i img_in_order/img%04d.png -s 800x600 tuolapse_2015_short.mp4'))
-
-## make movie mp4 (with raw name of images i.e., "JPG.png")
-system(command = paste('ffmpeg -f image2 -i output/composite/hydro/PICT%04d.JPG.png -s 800x600 tuolapse_2015_short.mp4'))
-
-
-## additional ffmpeg info
-# ffmpeg -y -loop 1 -f image2 -r 0.5 -i image-%03d.jpg -s:v 1280x720 -b:v 1M \
-#  -i soundtrack.mp3 -t 01:05:00 -map 0:0 -map 1:0 out.avi
-
-## -loop_input – loops the images
-## -r 0.5 – sets the framerate to 0.5, which means that each image will be shown for 2 seconds. Just take the inverse, 
-##  for example if you want each image to last for 3 seconds, set it to 0.33
-## -i soundtrack.mp3 # soundtrack file you can add whatever
-## -t 01:05:00 #set the output length in hh:mm:ss format
-
-
-
-
-
-
+## make slower (longer exposure per image, '-r ##' frames per second)
+system(command = paste('ffmpeg -f image2 -r 12 -i PICT%04d.JPG -s 800x600 tuolapse_2015_short.mp4'))
 

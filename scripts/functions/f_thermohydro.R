@@ -18,11 +18,11 @@ fig.Thermohydro <- function(test.subset = nrow(photolist_sub)){
     
     grid.arrange(
       ggplot() + 
-        geom_line(data = dff, aes(x = datetime, y = lev.avg), color = "grey50", size = 1, alpha=0.8) +
+        geom_line(data = dff, aes(x = datetime, y = lev.avg), color = "black", size = 1, alpha=0.8) +
         scale_colour_gradientn(name=expression(paste("WaterTemp(",degree,"C)")),colours=palette(palette), values=breaks, 
                                rescaler = function(x, ...) x, oob = identity,limits=range(breaks), breaks=breaks, space="Lab") +
         geom_ribbon(data = dff[dff$datetime <= dff$datetime[j],], 
-                    aes(x = datetime, ymax = lev.avg, ymin = min(dff$lev.avg)), fill = "gray30", alpha = .3) +
+                    aes(x = datetime, ymax = lev.avg, ymin = min(dff$lev.avg)), fill = "gray30", alpha = 0.5) +
         geom_line(data = dff[dff$datetime <= dff$datetime[j],], 
                   aes(x = datetime, y = lev.avg, color=temp.avg), size = 1) +
         #scale_x_datetime(limits = c(as.POSIXct(min(dff$datetime)),as.POSIXct(max(dff$datetime))), labels = date_format("%b-%Y"))+

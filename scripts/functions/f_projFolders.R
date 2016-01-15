@@ -20,8 +20,10 @@ proj.Folders<-function(new=FALSE){
     dir.create(file.path(paste0(basepath,"/output")),showWarnings=TRUE)
     dir.create(file.path(paste0(basepath,"/output/composite")), showWarnings=TRUE)
     dir.create(file.path(paste0(basepath,"/output/temp")), showWarnings=TRUE)
+    dir.create(file.path(paste0(basepath,"/output/temp/thermo")), showWarnings=TRUE)
+    dir.create(file.path(paste0(basepath,"/output/temp/hydro")), showWarnings=TRUE)
     dir.create(file.path(paste0(basepath,"/photos")),showWarnings=TRUE)
-    dir.create(file.path(paste0(basepath,"/scripts")),showWarnings=TRUE)
+    #dir.create(file.path(paste0(basepath,"/scripts")),showWarnings=TRUE)
     cat("All folders created! \n
         \t data 
         \t output

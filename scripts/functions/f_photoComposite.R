@@ -7,6 +7,7 @@ photoComposite <- function(bgcol = "white",
                            infobarheight = 105,
                            plotlocation = "southeast",
                            thermo=TRUE,
+                           site="",
                            parallel = TRUE, 
                            cores = 2){
   
@@ -27,7 +28,7 @@ photoComposite <- function(bgcol = "white",
         figfold<-"hydro"
       }
       
-      shell(cmd = paste("convert -size 2048x1536", " ", path, '\\photos\\', k, # copied photos to proj dir
+      shell(cmd = paste("convert -size 2048x1536", " ", path, '\\photos\\',site,'\\', k, # copied photos to proj dir
                         
                         ## Plot and background rectangle placement
                         ' -draw', ' " fill ', 
@@ -71,7 +72,7 @@ photoComposite <- function(bgcol = "white",
         figfold<-"hydro"
       }
       
-      shell(cmd = paste("convert -size 2048x1536", " ", path, '\\photos\\', k,
+      shell(cmd = paste("convert -size 2048x1536", " ", path, '\\photos\\',site,'\\', k,
                         ##Plot and background rectangle placement
                         ' -draw', ' " fill ', 
                         "rgba(" , col2rgb(bgcol)[1], ",", col2rgb(bgcol)[2], ",", col2rgb(bgcol)[3], ",", alpha, ")",

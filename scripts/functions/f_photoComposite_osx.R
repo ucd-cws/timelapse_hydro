@@ -7,18 +7,13 @@ photoComposite <- function(bgcol = "white",
                            gap = 5,
                            infobarheight = 105,
                            plotlocation = "southeast",
+                           site="",
                            thermo=TRUE,
                            parallel = TRUE, 
                            cores = 2){
   
-  #path <- gsub(pattern = "/", replacement = "\\\\", x = getwd())
   path <- getwd()
   
-  if(thermo){
-    photonames<-gsub(pattern=".JPG",replacement = "_thermo", x = photolist_sub[,"photo"],ignore.case = TRUE)
-  } else {
-    photonames<-gsub(pattern=".JPG",replacement = "_hydro", x = photolist_sub[,"photo"],ignore.case = TRUE)
-  }
   print("Overlay images")
   
   # MAC
@@ -34,7 +29,7 @@ photoComposite <- function(bgcol = "white",
         figfold<-"hydro"
       }
       
-      system(command = paste("convert -size 2048x1536", " ", path, '//photos//', k, # copied photos to proj dir
+      system(command = paste("convert -size 2048x1536", " ", path, '//photos//',site,'//', k, # copied photos to proj dir
                              ## Plot and background rectangle placement
                              ' -draw', ' " fill ', 
                              "rgba(" , col2rgb(bgcol)[1], ",", col2rgb(bgcol)[2], ",", col2rgb(bgcol)[3], ",", alpha, ")",
@@ -76,7 +71,7 @@ photoComposite <- function(bgcol = "white",
         figfold<-"hydro"
       }
       
-      system(command = paste("convert -size 2048x1536", " ", path, '//photos//', k,                  
+      system(command = paste("convert -size 2048x1536", " ", path, '//photos//',site,'//', k,                  
                              ## Plot and background rectangle placement
                              ' -draw', ' " fill ', 
                              "rgba(" , col2rgb(bgcol)[1], ",", col2rgb(bgcol)[2], ",", col2rgb(bgcol)[3], ",", alpha, ")",

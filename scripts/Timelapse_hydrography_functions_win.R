@@ -31,10 +31,11 @@ source("./scripts/functions/f_photoComposite.R")
 
 ## check if all proj folders are created in current working dir.
 ## best if you navigate to root dir of interest first
-setwd("./PROJECTS/timelapse_hydro")
+#setwd("./PROJECTS/timelapse_hydro")
 
 # load pre-run data (photolist)
-load("./data/tuo_20151217_photolist.Rda")
+load("./data/tuo_20151217_photolist.rda")
+load("./data/nfa_20150805_photolist.rda")
 
 ## run folder function (new=FALSE means don't create new folders set, just check)
 
@@ -44,8 +45,11 @@ proj.Folders(new=FALSE)
 
 p <- proc.time()
 
+# Select sitename (should be same name as folder the raw photos are in)
+site<-"NFA"
+
 ## list all photo files in the dir
-files <- list.files(path = paste0(getwd(),"/photos"), pattern = ".jpg",ignore.case = TRUE, full.names = T)
+files <- list.files(path = paste0(getwd(),"/photos",site), pattern = ".jpg",ignore.case = TRUE, full.names = T)
 
 ## make a vector of just the photo_numbers
 photo_numbers<-basename(files) # ".jpg" only
@@ -85,6 +89,7 @@ interval = 15
 level <- read.csv(paste(getwd(), "/data/", logger.name, sep = ""), stringsAsFactors = F, skip = 11) # check lines to skip
 level$datetime <- as.POSIXct(paste(level$Date, level$Time), format = "%Y/%m/%d %H:%M:%S")
 level$datetimeround <- as.POSIXct(round(as.double(level$datetime)/(interval*60))*(interval*60),origin=(as.POSIXct(tz="GMT",'1970-01-01')))
+colnames(level)[4:5]<-toupper(colnames(level)[4:5])
 
 ## subset to the photo list 
 levsub <- na.omit(level[level$datetimeround >= range(photolist$timeround)[1] & level$datetimeround <= range(photolist$timeround)[2],])
@@ -172,7 +177,7 @@ fig.Hydro(test.subset=10) # short test
 p <- proc.time()
 
 # Run photoComposite function
-photoComposite(parallel = T, cores=3,thermo = FALSE)
+photoComposite(parallel = T, cores=3, thermo=F, site="NFA", plotlocation = "northwest")
 
 runtime <- proc.time() - p
 print(paste("finished in", format(runtime[3]/60, digits = 4), "minutes"))
@@ -193,8 +198,9 @@ file.rename(from = file.path(list.files(dir_w_files,pattern='.JPG',full.names = 
             to = file.path(dir_w_files, newfilenames))
 
 # CREATE mp4 USING FFMPEG -------------------------------------------------
-setwd("./output/composite")
 
+## move to dir with composite photos
+setwd("./output/composite")
 
 ## MAKE SURE THE ONLY THING IN THE COMPOSITE FOLDER IS JPGs, no other files or ffmpeg will crash
 
@@ -203,19 +209,4 @@ shell(cmd = paste('ffmpeg -f image2 -i  PICT%04d.JPG -s 800x600 tuolapse_2015_sh
 
 ## make slower (longer exposure per image, frames per second)
 shell(cmd = paste('ffmpeg -f image2 -r 12 -i PICT%04d.JPG -s 800x600 tuolapse_2015_short.mp4'))
-
-
-## additional ffmpeg info
-#  -i soundtrack.mp3 -t 01:05:00 -map 0:0 -map 1:0 out.avi
-# -loop_input – loops the images
-# -r 0.5 – sets the framerate to 0.5, which means that each image will be shown for 2 seconds. Just take the inverse, 
-##  for example if you want each image to last for 3 seconds, set it to 0.33
-# -i soundtrack.mp3 # soundtrack file you can add whatever
-## -t 01:05:00 #set the output length in hh:mm:ss format
-
-
-
-
-
-
 
