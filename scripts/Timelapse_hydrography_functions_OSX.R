@@ -1,8 +1,8 @@
 ## Timelapse Hydrography image compositer script: OSX ---------------------
 
-## Author: Eric Holmes, Ryan Peek, and Nick Santos
+## Author: Ryan Peek
 ## Organization: UC Davis Center for Watershed Sciences
-## Date: 2016/01/05
+## Date: 2016-02-25
 
 ## Note: Script requires **imagemagick** to be in the system path for command calls 
 ## Similarly **ffmpeg** is required to be installed for stitching into mp4 file.
@@ -19,6 +19,7 @@ library(stringr)
 library(dplyr)
 library(magrittr)
 library(doMC)
+library(readr)
 
 # SOURCE FUNCTIONS --------------------------------------------------------
 
@@ -37,7 +38,7 @@ source("./scripts/functions/f_photoComposite_osx.R")
 ## run folder function
 proj.Folders(new=F)
 
-# GATHER PHOTO INFO (DATETIME, BARO, BRIGHTNESS) ------------------------
+# OLD MOULTRIE: GATHER PHOTO INFO (DATETIME, BARO, BRIGHTNESS) ------------
 
 # p <- proc.time()
 
@@ -68,6 +69,14 @@ photolist_sub <- photolist[photolist$brightness > 40, ]
 
 load("./data/nfa_20150805_photolist.rda")
 
+# 
+
+# NEW MOULTRIE (USE exiftools)
+
+## use the script/exiftools.R
+
+nfa_game<-read_rds("./data/NFA_exif_2016-02-25.rds")
+
 # SUBSET DATE TO WINDOW OF INTEREST ---------------------------------------
 
 ## If subsetting to certain date window use these lines
@@ -76,6 +85,15 @@ end.date<-ymd_hms("2015-12-17 09:00:00")
 
 ## use magrittr to filter by dates
 photolist_sub %<>% filter(datetime >= start.date & datetime <= end.date)
+
+
+# GET FLOW DATA FROM USGS GAGE --------------------------------------------
+source("./scripts/functions/f_USGS_15min.R")
+# get.USGS(11427000, "NFA", sdate = "2016-02-01", save15 = T)
+
+
+nfa_usgs<-read_csv("data/NFA_2016-02-01_15min_USGS.csv")
+
 
 # GET LOGGER DATA FROM CSV AND SUBSET TO PHOTOS ---------------------------
 

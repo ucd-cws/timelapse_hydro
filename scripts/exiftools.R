@@ -26,9 +26,9 @@ library(tidyr)
 
 # OLD MOULTRIE ------------------------------------------------------------
 
-path.to.photos<-"/gamecam/"
+path.to.photos<-"~/Desktop/gamecam/nfa/"
 path.to.photos<-"/Volumes/projects/Long_Term_Monitoring/American_Yuba_Rivers/photos/NFYuba/TimeLapse/20140512/" # server
-site <- "NFY"
+site <- "NFA"
 
 # internal R call for old MOULTRIE
 exifinfo<-system(command = paste0('exiftool -r -s -T -FILE:FileName -EXIF:CreateDate -EXIF:Software -EXIF:ImageDescription ',path.to.photos),intern=T)
@@ -65,10 +65,14 @@ write_rds(assign(df.name, df), path = paste0("./data/", site, "_exif_20140512.rd
 
 # NEW MOULTRIE ------------------------------------------------------------
 
+# date checked/downloaded
+datecheck<-"2016-02-25"
+
 # photo location and site info
-path.to.photos<-"I:/DCIM/100MFCAM" # SD Card
-path.to.photos<-"/Volumes/projects/Long_Term_Monitoring/American_Yuba_Rivers/photos/NFYuba/TimeLapse/20140512/" # server
-site <- "NFY"
+path.to.photos<-"~/Desktop/gamecam/nfa/"
+#path.to.photos<-"I:/DCIM/100MFCAM" # SD Card
+#path.to.photos<-"/Volumes/projects/Long_Term_Monitoring/American_Yuba_Rivers/photos/NFYuba/TimeLapse/20140512/" # server
+site <- "NFA"
 
 # internal R call for new MOULTRIE, get info and write to local dataframe in R
 exifinfo<-system(command = paste0('exiftool -r -s -T -FILE:FileName -EXIF:CreateDate -EXIF:MakerNoteUnknownText ',path.to.photos),intern=T)
@@ -86,16 +90,17 @@ df$datetime<-ymd_hms(df$datetime) # convert datetime to POSIXct
 
 df<-df[,c(6,1:2,4,5)] # pull cols of interest
 
-h(df)
+head(df)
+summary(df)
 
-df.name<-paste0(site, "_exif") # set name for assigning to dataframe
+df.name<-paste0(site, "_exif_",datecheck) # set name for assigning to dataframe
 assign(df.name, df) # assign dataframe
 
 # save data
-write_rds(assign(df.name, df), path = paste0(root, "/data/", site, "_exif.rds")) # save to rds
+write_rds(assign(df.name, df), path = paste0("./data/", site, "_exif_",datecheck, ".rds")) # save to rds
 
 # clear workspace
-rm(list=ls())
+#rm(list=ls())
 
 # read in rds
 #exif<-read_rds(path = paste0(root, "/data/", site, "_exif.rds"))  # or use base package readRDS
