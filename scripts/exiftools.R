@@ -75,20 +75,23 @@ path.to.photos<-"~/Desktop/gamecam/nfa/"
 site <- "NFA"
 
 # internal R call for new MOULTRIE, get info and write to local dataframe in R
-exifinfo<-system(command = paste0('exiftool -r -s -T -FILE:FileName -EXIF:CreateDate -EXIF:MakerNoteUnknownText ',path.to.photos),intern=T)
+# exifinfo<-system(command = paste0('exiftool -r -s -T -FILE:FileName -EXIF:CreateDate -EXIF:MakerNoteUnknownText ',path.to.photos),intern=T)
+exifinfo<-system(command = paste0('exiftool -r -s -T -FILE:FileName -EXIF:CreateDate -EXIF:MakerNoteUnknownText -Composite:LightValue ',path.to.photos),intern=T)
+
 # str(exifinfo) # view data
 text <- as.data.frame(row.names = NULL, x = exifinfo, stringsAsFactors = F) # convert to text dataframe with column name
 
 # split out data into columns
-df<-separate(data=text, col = exifinfo, into = c("photo", "datetime", "infostrip"), sep = "\t") # split by tab
+df<-separate(data=text, col = exifinfo, into = c("photo", "datetime", "infostrip","exposure"), sep = "\t") # split by tab
 
 # new cameras set to only day, don't really need to filter by exposure...though need to find approp field if so
+df$exposure <- as.numeric(df$exposure)
 df$baro_inHg <- as.numeric(stringr::str_extract(string=df$infostrip,pattern="([0-9]{1,2})[.]([0-9]{1,2})")) # get baroHg
 df$air_C <- as.numeric(sapply(strsplit(df$infostrip, ":", fixed = T), "[", 2))
 df$site <- site
 df$datetime<-ymd_hms(df$datetime) # convert datetime to POSIXct
 
-df<-df[,c(6,1:2,4,5)] # pull cols of interest
+df<-df[,c(7,1:2,4:6)] # pull cols of interest
 
 head(df)
 summary(df)
@@ -104,5 +107,6 @@ write_rds(assign(df.name, df), path = paste0("./data/", site, "_exif_",datecheck
 
 # read in rds
 #exif<-read_rds(path = paste0(root, "/data/", site, "_exif.rds"))  # or use base package readRDS
+
 
 

@@ -20,6 +20,7 @@ library(dplyr)
 library(magrittr)
 library(doMC)
 library(readr)
+library(tidyr)
 
 # SOURCE FUNCTIONS --------------------------------------------------------
 
@@ -28,6 +29,7 @@ source("./scripts/functions/f_photoInfo_osx.R")
 source("./scripts/functions/f_thermohydro.R")
 source("./scripts/functions/f_hydrographs.R")
 source("./scripts/functions/f_photoComposite_osx.R")
+
 
 # CREATE FOLDERS FOR PROJECT ----------------------------------------------
 
@@ -71,11 +73,27 @@ load("./data/nfa_20150805_photolist.rda")
 
 # 
 
-# NEW MOULTRIE (USE exiftools)
 
-## use the script/exiftools.R
+# NEW MOULTRIE: Gather Photoinfo using exiftools --------------------------
 
-nfa_game<-read_rds("./data/NFA_exif_2016-02-25.rds")
+source("./scripts/functions/f_exifInfo.R")
+
+# if running function:
+exifInfo(site="NFA",path.to.photos = "~/Desktop/gamecam/nfa/", datecheck = "2016-02-25", saveInfo = T)
+
+# if just loading data
+photolist<-readr::read_rds("./data/NFA_exif_2016-02-25.rds")
+
+# need to match times with 15 or hourly intervals: do that here
+interval = 15 ## set interval in minutes
+photolist$datetimeround <- as.POSIXct(round(as.double(photolist$datetime)/
+                                              (interval*60))*(interval*60),origin=(as.POSIXct(tz="GMT",'1970-01-01')))
+head(photolist)
+# make sure all are distinct (i.e., number here matches total rows in df)
+dplyr::n_distinct(photolist$datetimeround)
+
+## Subset to photos to daytime images using exposure/brightness as proxy
+photolist_sub <- photolist[photolist$exposure >= 4, ]
 
 # SUBSET DATE TO WINDOW OF INTEREST ---------------------------------------
 
@@ -86,14 +104,21 @@ end.date<-ymd_hms("2015-12-17 09:00:00")
 ## use magrittr to filter by dates
 photolist_sub %<>% filter(datetime >= start.date & datetime <= end.date)
 
+# GET DATA FROM USGS and SUBSET TO PHOTOLIST ------------------------------
 
-# GET FLOW DATA FROM USGS GAGE --------------------------------------------
 source("./scripts/functions/f_USGS_15min.R")
+
 # get.USGS(11427000, "NFA", sdate = "2016-02-01", save15 = T)
 
+usgs<-readr::read_csv("data/NFA_2016-02-01_15min_USGS.csv")
 
-nfa_usgs<-read_csv("data/NFA_2016-02-01_15min_USGS.csv")
+## subset to the photo list 
+Qsub <- na.omit(usgs[usgs$datetime >= range(photolist_sub$datetimeround)[1] & usgs$datetime <= range(photolist_sub$datetimeround)[2],])
 
+## merge with photolist_sub to make into one dataframe for everything
+dff<-merge(Qsub[,c(1:3,5,11:12)], photolist_sub[,c(7,2,5:6)], by.x="datetime", by.y="datetimeround", all = F)
+
+head(dff)
 
 # GET LOGGER DATA FROM CSV AND SUBSET TO PHOTOS ---------------------------
 
@@ -144,7 +169,30 @@ breaks<-(c(0,3,6,9,12,15,18,21,24,27))
 palette<-c("black","midnightblue","blue","deepskyblue2",
            "green4","green","yellow","orange","red","darkviolet") # orange orangered brown4
 
-# test plot to set colors
+# USGS plot to set colors
+grid.arrange(
+  ggplot() + 
+    geom_line(data = dff, aes(x = datetime, y = flow_cms), color = "grey50", size = 1, alpha=0.8) +
+    #scale_colour_gradientn(name="Stage (m)",colours=palette(palette), values=breaks, 
+    #                       rescaler = function(x, ...) x, oob = identity,limits=range(breaks), breaks=breaks, space="Lab") +
+    geom_ribbon(data = dff[dff$datetime <= dff$datetime[nrow(dff)],], 
+                aes(x = datetime, ymax = flow_cms, ymin = min(dff$flow_cms)), fill = "blue", alpha = .5) +
+    
+    geom_line(data = dff[dff$datetime <= dff$datetime[nrow(dff)],], 
+              aes(x = datetime, y = flow_cms), size = 1) +
+    geom_point(data = dff[dff$datetime == dff$datetime[nrow(dff)],], 
+               aes(x = datetime, y = flow_cms),pch=21, fill="gray10", col="white",size = 8) + 
+    labs(list(x="",y = "Q (cms)")) + theme_bw() +
+    theme(axis.text.x = element_text(face="bold", size=12),
+          axis.text.y = element_text(face="bold", size=12),
+          axis.title.y = element_text(face="bold", size=12),
+          panel.background = element_rect(fill = "transparent",colour = NA),
+          panel.grid.minor = element_blank(), 
+          panel.grid.major = element_blank(),
+          plot.background = element_rect(fill = "transparent",colour = NA))
+)
+
+# SOLINST plot to set colors
 grid.arrange(
   ggplot() + 
     geom_line(data = dff, aes(x = datetime, y = lev.avg), color = "grey50", size = 1, alpha=0.8) +
@@ -175,19 +223,28 @@ fig.Thermohydro(test.subset=50)
 
 # HYDROGRAPH ONLY ---------------------------------------------------------
 
-fig.Hydro()
+## USGS version
+source("./scripts/functions/f_hydrographs_usgs.R")
 
-fig.Hydro(test.subset=50) # short test
+#fig.Hydro.usgs(cms = F, test.subset = 20)
+fig.Hydro.usgs(cms = F)
+
+## SOLINST version
+
+#fig.Hydro(test.subset=50) # short test
+
+fig.Hydro()
 
 # OVERLAY IMAGES USING IMAGEMAGICK -composite COMMAND ---------------------
 
 ## make sure you are in the root folder of your timelapse project folders
+## and photos are copied into folder in your photos folder within projects
+## i.e., "timelapse_hydro/photos/SITE/[images]"
 
 p <- proc.time()
 
 # Run photoComposite function
 photoComposite(parallel = T, cores=3, thermo=F, site="NFA", plotlocation = "northwest")
-photoComposite(parallel = F, thermo=T, site = "NFA", plotlocation = "northwest")
 
 runtime <- proc.time() - p
 print(paste("finished in", format(runtime[3]/60, digits = 4), "minutes"))
@@ -217,7 +274,7 @@ setwd("./output/composite/")
 # system(command = paste('x=1; for i in *png; do counter=$(printf %04d $x); ln "$i" img_in_order/img"$counter".png; x=$(($x+1)); done'))
 
 ## now make movie mp4 (images need to be numerically ordered, default ~25 frames per sec)
-system(command = paste('ffmpeg -f image2 -i  PICT%04d.JPG -s 800x600 nfalapse_2015_short.mp4'))
+system(command = paste('ffmpeg -f image2 -i  PICT%04d.JPG -s 800x600 nfalapse_2016_short.mp4'))
 
 ## make slower (longer exposure per image, '-r ##' frames per second)
 system(command = paste('ffmpeg -f image2 -r 12 -i PICT%04d.JPG -s 800x600 tuolapse_2015_short.mp4'))
