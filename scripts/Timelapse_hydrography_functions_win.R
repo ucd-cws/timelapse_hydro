@@ -73,29 +73,40 @@ photolist_sub <- photolist[photolist$brightness > 40, ]
 
 # SUBSET DATE WINDOW OF INTEREST ------------------------------------------
 
+# load the photo data from a file
+load("data/NFA_20140805_photolist.rda")
+
 ## If subsetting to certain date window use these lines
-start.date<-ymd_hms("2015-12-01 09:00:00")
-end.date<-ymd_hms("2015-12-15 09:00:00")
+start.date<-ymd_hms("2014-06-01 07:00:00")
+end.date<-ymd_hms("2014-06-30 07:00:00")
 
 photolist_sub %<>% filter(datetime >= start.date & datetime <= end.date)
-s(photolist_sub)
+summary(photolist_sub)
 
 # Create moving hydrographs from logger data ------------------------------
 
 ## get the logger file name of interest
-logger.name <- "2015_TUO_solinst_12_17.csv"
-interval = 15
+logger.name <- "./data/logger/2014_NFA_solinst_08_05.csv"
+interval <- 60 # set the interval to minutes
+skiplines <- 16
 
-level <- read.csv(paste(getwd(), "/data/", logger.name, sep = ""), stringsAsFactors = F, skip = 11) # check lines to skip
-level$datetime <- as.POSIXct(paste(level$Date, level$Time), format = "%Y/%m/%d %H:%M:%S")
+level <- read.csv(logger.name, stringsAsFactors = F, skip = skiplines) # check lines to skip
+
+#level$datetime <- as.POSIXct(paste(level$Date, level$Time), format = "%Y/%m/%d %H:%M:%S") # check to make sure YMD or MDY
+
+level$datetime <- as.POSIXct(paste(level$Date, level$Time), format = "%m/%d/%Y %H:%M:%S")
+
 level$datetimeround <- as.POSIXct(round(as.double(level$datetime)/(interval*60))*(interval*60),origin=(as.POSIXct(tz="GMT",'1970-01-01')))
-colnames(level)[4:5]<-toupper(colnames(level)[4:5])
+
+head(level)
+
+colnames(level)[5:6]<-toupper(colnames(level)[5:6]) # check to make sure these column numbers are correct, Level & Temperature
 
 ## subset to the photo list 
-levsub <- na.omit(level[level$datetimeround >= range(photolist$timeround)[1] & level$datetimeround <= range(photolist$timeround)[2],])
+levsub <- na.omit(level[level$datetimeround >= range(photolist_sub$timeround)[1] & level$datetimeround <= range(photolist_sub$timeround)[2],])
 
 ## Make Hourly dataset to match photos
-dfhr<- levsub %>%
+levhr<- levsub %>%
   mutate("year"=year(datetimeround),
          "month"=month(datetimeround),
          "yday"=yday(datetimeround),
@@ -114,9 +125,27 @@ dfhr<- levsub %>%
   as.data.frame()
 
 # merge with photolist_sub to make into one dataframe for everything
-dff<-merge(dfhr, photolist_sub[,c(1,3:5)], by.x="datetime", by.y="timeround", all = F)
+dff<-merge(levhr, photolist_sub[ ,c(1,3:5) ], by.x="datetime", by.y="timeround", all = F)
 
-s(dff)
+summary(dff)
+
+# GET DATA FROM USGS and SUBSET TO PHOTOLIST ------------------------------
+
+# might need to install packages: caTools, data.table, readr
+
+source("./scripts/functions/f_USGS_15min.R") # make sure data.table installed
+
+get.USGS(gage = 11427000, river = "NFA", sdate = "2011-01-01", edate = "2016-01-01", saveHrly = T, save15 = F) # 11727000 USGS for NFA, #11413000 is for NFY
+
+usgs<-readr::read_csv("data/usgs/NFA_2014-06-01_hourly_USGS.csv")
+
+## subset to the photo list 
+Qsub <- na.omit(usgs[usgs$datetime >= range(photolist_sub$timeround)[1] & usgs$datetime <= range(photolist_sub$timeround)[2],])
+
+## merge with photolist_sub to make into one dataframe for everything
+dff<-merge(Qsub, photolist_sub[,c(1,3:5)], by.x="datetime", by.y="timeround", all = F)
+
+head(dff)
 
 # TEST PLOTS --------------------------------------------------------------
 
@@ -161,14 +190,18 @@ fig.Thermohydro(test.subset=10)
 
 # HYDROGRAPH ONLY ---------------------------------------------------------
 
-#p <- proc.time()
+## USGS version
+source("./scripts/functions/f_hydrographs_usgs.R")
+
+fig.Hydro.usgs(cms = F, test.subset = 20) # test a subset
+
+fig.Hydro.usgs(cms = F) # to run all
+
+## SOLINST version
+
+#fig.Hydro(test.subset=50) # short test
 
 fig.Hydro()
-
-fig.Hydro(test.subset=10) # short test
-
-#runtime <- proc.time() - p
-#print(paste("finished in", format(runtime[3]/60, digits = 4), "minutes"))
 
 # Overlay images using imagemagick -composite command ---------------------
 

@@ -82,7 +82,7 @@ get.USGS<-function(gage, river, sdate="2010-10-01", edate=Sys.Date(),
                                               hour,":00"),format = "%Y-%m-%j %H:%M"))) %>%
     select(datetime,year,mon,yday,flow_cfs:stage_m) %>%
     as.data.frame()
-  h(riv.hr)
+  head(riv.hr)
   
   if(!require(ggplot2)) { install.packages("ggplot2"); require(ggplot2)}
   

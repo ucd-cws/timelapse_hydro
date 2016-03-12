@@ -21,11 +21,11 @@ fig.Hydro.usgs <- function(test.subset = nrow(photolist_sub), cms=T){
       
       grid.arrange(
         ggplot(dff, aes(x = datetime, y = flow_cms)) + geom_line(color = "grey30", size = 1) + theme_bw() + 
-          geom_ribbon(data = dff[dff$datetime <= photolist_sub$datetimeround[j],], 
+          geom_ribbon(data = dff[dff$datetime <= photolist_sub$timeround[j],], 
                       aes(ymax = flow_cms, ymin = min(dff$flow_cms)), fill = "blue", alpha = .5) +
-          geom_line(data = dff[dff$datetime <= photolist_sub$datetimeround[j],], 
+          geom_line(data = dff[dff$datetime <= photolist_sub$timeround[j],], 
                     aes(x = datetime, y = flow_cms), size = 2) +
-          geom_point(data = dff[dff$datetime == photolist_sub$datetimeround[j],], 
+          geom_point(data = dff[dff$datetime == photolist_sub$timeround[j],], 
                      aes(x = datetime, y = flow_cms), pch=21, fill="skyblue1", size = 8) +
           ylim(c(0,5000))+
           labs(list(x = "", y = "Discharge (cms)")) +
@@ -57,11 +57,11 @@ fig.Hydro.usgs <- function(test.subset = nrow(photolist_sub), cms=T){
       
       grid.arrange(
         ggplot(dff, aes(x = datetime, y = flow_cfs)) + geom_line(color = "grey30", size = 1) + theme_bw() + 
-          geom_ribbon(data = dff[dff$datetime <= photolist_sub$datetimeround[j],], 
+          geom_ribbon(data = dff[dff$datetime <= photolist_sub$timeround[j],], 
                       aes(ymax = flow_cfs, ymin = min(dff$flow_cfs)), fill = "blue", alpha = .5) +
-          geom_line(data = dff[dff$datetime <= photolist_sub$datetimeround[j],], 
+          geom_line(data = dff[dff$datetime <= photolist_sub$timeround[j],], 
                     aes(x = datetime, y = flow_cfs), size = 2) +
-          geom_point(data = dff[dff$datetime == photolist_sub$datetimeround[j],], 
+          geom_point(data = dff[dff$datetime == photolist_sub$timeround[j],], 
                      aes(x = datetime, y = flow_cfs), pch=21, fill="skyblue1", size = 8) +
           labs(list(x = "", y = "Discharge (cfs)")) +
           theme(axis.text.x = element_text(face="bold", size=12),
