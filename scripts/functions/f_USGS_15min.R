@@ -11,6 +11,13 @@
 
 # INSTANTANEOUS -----------------------------------------------------------
 
+# Function to add a pause or break in script or function
+Pause <- function () { 
+  cat("Hit <enter> to continue...")
+  readline()
+  invisible()
+}
+
 get.USGS<-function(gage, river, sdate="2010-10-01", edate=Sys.Date(),
                    save15=FALSE, 
                    saveHrly=FALSE,
