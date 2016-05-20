@@ -33,12 +33,7 @@ source("./scripts/functions/f_photoComposite.R")
 ## best if you navigate to root dir of interest first
 #setwd("./PROJECTS/timelapse_hydro")
 
-# load pre-run data (photolist)
-load("./data/tuo_20151217_photolist.rda")
-load("./data/nfa_20150805_photolist.rda")
-
 ## run folder function (new=FALSE means don't create new folders set, just check)
-
 proj.Folders(new=FALSE)
 
 # Gather datetime and brightness from timelapse photos --------------------
@@ -46,7 +41,7 @@ proj.Folders(new=FALSE)
 p <- proc.time()
 
 # Select sitename (should be same name as folder the raw photos are in)
-site<-"NFA"
+site<-"MFY"
 
 ## list all photo files in the dir
 files <- list.files(path = paste0(getwd(),"/photos",site), pattern = ".jpg",ignore.case = TRUE, full.names = T)
@@ -55,12 +50,16 @@ files <- list.files(path = paste0(getwd(),"/photos",site), pattern = ".jpg",igno
 photo_numbers<-basename(files) # ".jpg" only
 
 ## Run photoInfo function
-photolist <- photoInfo(parallel=T, test.subset = 20) # this is for testing
+photolist <- photoInfo(parallel=F, test.subset = 20) # this is for testing
 photolist <- photoInfo(cores = 2) # almost 40 min for ~3700 photos
 
 ## check runtime
 runtime <- proc.time() - p
 print(paste("finished in", format(runtime[3]/60, digits = 4), "minutes"))
+
+## OR USE PREMADE PHOTOLIST
+mfy_exif<-read_rds(path = paste0("./data/", site, "_exif.rds")) # from exifinfo
+photolist<-mfy_exif
 
 ## round to whole hours
 photolist$timeround <- floor_date(x = photolist$datetime, unit = "hour")
@@ -69,16 +68,19 @@ photolist$timeround <- floor_date(x = photolist$datetime, unit = "hour")
 photolist_sub <- photolist[photolist$brightness > 40, ]
 
 ## Save to .Rdata file so you don't have to do this again and wait
-# save(photolist, photolist_sub, file = "./data/tuo_20151217_photolist.Rda")
+save(photolist, photolist_sub, file = "./data/mfy_2016_photolist.Rda")
 
 # SUBSET DATE WINDOW OF INTEREST ------------------------------------------
 
-# load the photo data from a file
-load("data/NFA_20140805_photolist.rda")
+# load the photo data from a file/pre-run
+# load("data/NFA_20140805_photolist.rda")
+# load("./data/tuo_20151217_photolist.rda")
+# load("./data/nfa_20150805_photolist.rda")
+load("./data/mfy_2016_photolist.rda")
 
 ## If subsetting to certain date window use these lines
-start.date<-ymd_hms("2014-06-01 07:00:00")
-end.date<-ymd_hms("2014-06-30 07:00:00")
+start.date<-ymd_hms("2016-06-01 07:00:00")
+end.date<-ymd_hms("2016-06-30 07:00:00")
 
 photolist_sub %<>% filter(datetime >= start.date & datetime <= end.date)
 summary(photolist_sub)

@@ -25,12 +25,13 @@
 library(readr)
 library(lubridate)
 library(tidyr)
+library(stringi)
 
 # OLD MOULTRIE ------------------------------------------------------------
 
-path.to.photos<-"~/Desktop/gamecam/nfa/"
-path.to.photos<-"/Volumes/projects/Long_Term_Monitoring/American_Yuba_Rivers/photos/NFYuba/TimeLapse/20140512/" # server
-site <- "NFA"
+path.to.photos<-"./photos/MFY/"
+#path.to.photos<-"/Volumes/projects/Long_Term_Monitoring/American_Yuba_Rivers/photos/NFYuba/TimeLapse/20140512/" # server
+site <- "MFY"
 
 # internal R call for old MOULTRIE
 exifinfo<-system(command = paste0('exiftool -r -s -T -FILE:FileName -EXIF:CreateDate -EXIF:Software -EXIF:ImageDescription ',path.to.photos),intern=T)
@@ -50,7 +51,7 @@ df$air_C <- as.numeric(stri_sub(sapply(strsplit(df$infostrip, ".", fixed = T), "
 df$site <- site
 df<-df[,c(7,1:3,5,6)] # pull cols of interest
 str(df)
-
+summary(df)
 df.name<-paste0(site, "_exif") # set name for assigning to dataframe
 assign(df.name, df) # assign dataframe
 
