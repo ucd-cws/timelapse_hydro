@@ -65,7 +65,7 @@ photolist<-mfy_exif
 photolist$timeround <- floor_date(x = photolist$datetime, unit = "hour")
 
 ## Subset to photos to daytime images using exposure/brightness as proxy
-photolist_sub <- photolist[photolist$brightness > 40, ]
+photolist_sub <- photolist[photolist$exposure > 40, ]
 
 ## Save to .Rdata file so you don't have to do this again and wait
 save(photolist, photolist_sub, file = "./data/mfy_2016_photolist.Rda")
@@ -98,21 +98,21 @@ level <- read.csv(logger.name, stringsAsFactors = F, skip = skiplines) # check l
 
 level$datetime <- as.POSIXct(paste(level$Date, level$Time), format = "%m/%d/%Y %H:%M:%S")
 
-level$datetimeround <- as.POSIXct(round(as.double(level$datetime)/(interval*60))*(interval*60),origin=(as.POSIXct(tz="GMT",'1970-01-01')))
+level$timeround <- as.POSIXct(round(as.double(level$datetime)/(interval*60))*(interval*60),origin=(as.POSIXct(tz="GMT",'1970-01-01')))
 
 head(level)
 
 colnames(level)[5:6]<-toupper(colnames(level)[5:6]) # check to make sure these column numbers are correct, Level & Temperature
 
 ## subset to the photo list 
-levsub <- na.omit(level[level$datetimeround >= range(photolist_sub$timeround)[1] & level$datetimeround <= range(photolist_sub$timeround)[2],])
+levsub <- na.omit(level[level$timeround >= range(photolist_sub$timeround)[1] & level$timeround <= range(photolist_sub$timeround)[2],])
 
 ## Make Hourly dataset to match photos
-levhr<- levsub %>%
-  mutate("year"=year(datetimeround),
-         "month"=month(datetimeround),
-         "yday"=yday(datetimeround),
-         "hour"=hour(datetimeround)) %>% 
+dfhr<- levsub %>%
+  mutate("year"=year(timeround),
+         "month"=month(timeround),
+         "yday"=yday(timeround),
+         "hour"=hour(timeround)) %>% 
   group_by(year, month, yday, hour)%>%
   summarize(
     "lev.avg"=mean(LEVEL,na.rm=TRUE),
@@ -127,7 +127,7 @@ levhr<- levsub %>%
   as.data.frame()
 
 # merge with photolist_sub to make into one dataframe for everything
-dff<-merge(levhr, photolist_sub[ ,c(1,3:5) ], by.x="datetime", by.y="timeround", all = F)
+dff<-merge(dfhr, photolist_sub[ ,c(7,1:2,4:6) ], by.x="datetime", by.y="timeround", all = F)
 
 summary(dff)
 

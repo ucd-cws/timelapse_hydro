@@ -86,12 +86,12 @@ photolist<-readr::read_rds("./data/NFA_exif_2016-02-25.rds")
 
 # need to match times with 15 or hourly intervals: do that here
 interval = 15 ## set interval in minutes
-photolist$datetimeround <- as.POSIXct(round(as.double(photolist$datetime)/
+photolist$timeround <- as.POSIXct(round(as.double(photolist$datetime)/
                                               (interval*60))*(interval*60),origin=(as.POSIXct(tz="GMT",'1970-01-01')))
 head(photolist)
 
 # make sure all are distinct (i.e., number here matches total rows in df)
-ifelse(nrow(photolist)==dplyr::n_distinct(photolist$datetimeround), "All rows are distinct", "STOP, duplicates in data") 
+ifelse(nrow(photolist)==dplyr::n_distinct(photolist$timeround), "All rows are distinct", "STOP, duplicates in data") 
 
 ## Subset to photos to daytime images using exposure/brightness as proxy
 photolist_sub <- photolist[photolist$exposure >= 4, ]
@@ -114,10 +114,10 @@ source("./scripts/functions/f_USGS_15min.R")
 usgs<-readr::read_csv("data/NFA_2016-02-01_15min_USGS.csv")
 
 ## subset to the photo list 
-Qsub <- na.omit(usgs[usgs$datetime >= range(photolist_sub$datetimeround)[1] & usgs$datetime <= range(photolist_sub$datetimeround)[2],])
+Qsub <- na.omit(usgs[usgs$datetime >= range(photolist_sub$timeround)[1] & usgs$datetime <= range(photolist_sub$timeround)[2],])
 
 ## merge with photolist_sub to make into one dataframe for everything
-dff<-merge(Qsub[,c(1:3,5,11:12)], photolist_sub[,c(7,2,5:6)], by.x="datetime", by.y="datetimeround", all = F)
+dff<-merge(Qsub[,c(1:3,5,11:12)], photolist_sub[,c(7,2,5:6)], by.x="datetime", by.y="timeround", all = F)
 
 head(dff)
 
@@ -132,18 +132,18 @@ interval = 15
 ## read in csv
 level <- read.csv(paste(getwd(), "/data/", logger.name, sep = ""), stringsAsFactors = F, skip = 13) # check lines to skip
 level$datetime <- as.POSIXct(paste(level$Date, level$Time), format = "%Y/%m/%d %H:%M:%S")
-level$datetimeround <- as.POSIXct(round(as.double(level$datetime)/(interval*60))*(interval*60),origin=(as.POSIXct(tz="GMT",'1970-01-01')))
+level$timeround <- as.POSIXct(round(as.double(level$datetime)/(interval*60))*(interval*60),origin=(as.POSIXct(tz="GMT",'1970-01-01')))
 colnames(level)[4:5]<-toupper(colnames(level)[4:5])
 
 ## subset to the photo list 
-levsub <- na.omit(level[level$datetimeround >= range(photolist$timeround)[1] & level$datetimeround <= range(photolist$timeround)[2],])
+levsub <- na.omit(level[level$timeround >= range(photolist$timeround)[1] & level$timeround <= range(photolist$timeround)[2],])
 
 ## Make Hourly dataset to match photos
 dfhr<- levsub %>%
-  mutate("year"=year(datetimeround),
-         "month"=month(datetimeround),
-         "yday"=yday(datetimeround),
-         "hour"=hour(datetimeround)) %>% 
+  mutate("year"=year(timeround),
+         "month"=month(timeround),
+         "yday"=yday(timeround),
+         "hour"=hour(timeround)) %>% 
   group_by(year, month, yday, hour)%>%
   summarize(
     "lev.avg"=mean(LEVEL,na.rm=TRUE),
@@ -250,18 +250,18 @@ grid.arrange(
 )
 
 
-# USGS hydro+air
+# USGS hydro+air POINT
 grid.arrange(
   ggplot(dff, aes(x = datetime, y = flow_cms)) + geom_line(color = "grey30", size = 1) + theme_bw() + 
-    geom_ribbon(data = dff[dff$datetime <= photolist_sub$datetimeround[nrow(dff)],], 
+    geom_ribbon(data = dff[dff$datetime <= photolist_sub$timeround[nrow(dff)],], 
                 aes(ymax = flow_cms, ymin = min(dff$flow_cms)), fill = "blue", alpha = .5) +
-    scale_colour_gradientn(name=expression(paste("AirTemp(",degree,"C)")),colours=palette(palette), values=breaks, 
-                           rescaler = function(x, ...) x, oob = identity,limits=range(breaks), breaks=breaks, space="Lab") +
-    geom_line(data = dff[dff$datetime <= photolist_sub$datetimeround[nrow(dff)],], 
-              aes(x = datetime, y = flow_cms, color=air_C), size = 2) +
-    geom_point(data = dff[dff$datetime == photolist_sub$datetimeround[nrow(dff)],], 
+    scale_colour_gradientn(name=expression(paste("AirTemp(",degree,"C)")),colours=palette(palette), values=breaksair, 
+                           rescaler = function(x, ...) x, oob = identity,limits=range(breaksair), breaks=breaksair, space="Lab") +
+    geom_point(data = dff[dff$datetime <= photolist_sub$timeround[nrow(dff)],], 
+              aes(x = datetime, y = flow_cms, color=air_C), size = 1.3) +
+    geom_point(data = dff[dff$datetime == photolist_sub$timeround[nrow(dff)],], 
                aes(x = datetime, y = flow_cms), pch=21, fill="skyblue1", size = 8) +
-    ylim(c(0,5000))+
+    #ylim(c(0,200))+
     labs(list(x = "", y = "Discharge (cms)")) +
     theme(axis.text.x = element_text(face="bold", size=12),
           axis.text.y = element_text(face="bold", size=12),
@@ -276,19 +276,19 @@ grid.arrange(
 
 fig.Thermohydro()
 
-fig.Thermohydro(test.subset=50)
+fig.Thermohydro(test.subset=10)
 
 # HYDROGRAPH ONLY ---------------------------------------------------------
 
-## USGS version
+## USGS version: NEED flow_cms & flow_cfs columns
 source("./scripts/functions/f_hydrographs_usgs.R")
 
-#fig.Hydro.usgs(cms = F, test.subset = 20)
+fig.Hydro.usgs(cms = F, test.subset = 20)
 fig.Hydro.usgs(cms = F)
 
-## SOLINST version
+## SOLINST version: NEED lev.avg column
 
-#fig.Hydro(test.subset=50) # short test
+fig.Hydro(test.subset=10) # short test
 
 fig.Hydro()
 
@@ -298,20 +298,20 @@ fig.Hydro()
 ## USGS version
 source("./scripts/functions/f_hydrographs_air_usgs.R")
 
-#fig.Hydroair.usgs(cms = F, test.subset = 20)
-fig.Hydroair.usgs(cms = F)
+fig.Hydroair.usgs(air = T, test.subset = 100)
+fig.Hydroair.usgs(air = F)
 
 
 # OVERLAY IMAGES USING IMAGEMAGICK -composite COMMAND ---------------------
 
 ## make sure you are in the root folder of your timelapse project folders
 ## and photos are copied into folder in your photos folder within projects
-## i.e., "timelapse_hydro/photos/SITE/[images]"
+## i.e., "timelapse_hydro/photos/*SITE*/[images]"
 
 p <- proc.time()
 
 # Run photoComposite function
-photoComposite(parallel = T, cores=3, thermo=F, site="NFA", plotlocation = "northwest")
+photoComposite(parallel = T, cores=3, thermo=T, site="MFY", plotlocation = "southeast")
 
 runtime <- proc.time() - p
 print(paste("finished in", format(runtime[3]/60, digits = 4), "minutes"))
