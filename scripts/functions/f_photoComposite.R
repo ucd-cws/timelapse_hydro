@@ -50,8 +50,7 @@ photoComposite <- function(bgcol = "white",
                                                               " -gravity southwest -geometry ", plotwidth, "x", plotheight, "+", gap, "+", infobarheight + gap, " -composite",sep = "")
                         },
                         
-                        if(plotlocation == "southeast"){paste(' rectangle ', 2048 - plotwidth, ",", 1536 - (plotheight + infobarheight), " ",
-                                                              2048 - gap, ",", 1536 + - (gap + infobarheight), '"', 
+                        if(plotlocation == "southeast"){paste(' rectangle ', gap, ",", gap , " ", plotwidth, ",", plotheight, '"', 
                                                               " ", path, '\\output\\temp\\', figfold,'\\', k,
                                                               " -gravity southeast -geometry ", plotwidth, "x", plotheight, "+", gap, "+", infobarheight + gap, " -composite",sep = "")
                         },

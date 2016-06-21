@@ -190,6 +190,16 @@ fig.Thermohydro(test.subset=10)
 #runtime <- proc.time() - p
 #print(paste("finished in", format(runtime[3]/60, digits = 4), "minutes"))
 
+
+# HYDROGRAPH AND AIR ------------------------------------------------------
+
+## USGS version
+source("./scripts/functions/f_hydrographs_air_usgs.R")
+
+fig.Hydroair.usgs(air = T, test.subset = 20)
+fig.Hydroair.usgs(air = T)
+
+
 # HYDROGRAPH ONLY ---------------------------------------------------------
 
 ## USGS version
@@ -212,7 +222,12 @@ fig.Hydro()
 p <- proc.time()
 
 # Run photoComposite function
-photoComposite(parallel = T, cores=3, thermo=F, site="NFA", plotlocation = "northwest")
+photoComposite(parallel = T, cores=3, thermo=T, site="MFY", plotlocation = "northwest",
+               alpha = 0.6,
+               plotwidth = 700,
+               plotheight = 500,
+               gap = 12,
+               infobarheight = 125)
 
 runtime <- proc.time() - p
 print(paste("finished in", format(runtime[3]/60, digits = 4), "minutes"))
