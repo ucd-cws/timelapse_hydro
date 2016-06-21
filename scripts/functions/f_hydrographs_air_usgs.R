@@ -8,10 +8,9 @@ fig.Hydroair.usgs <- function(test.subset = nrow(photolist_sub), air=T){
   palette<-c("black","midnightblue","blue","deepskyblue2", "green4", 
              "green","yellow","orange","red","darkviolet") # orange orangered brown4
   
-  
   if(air){
 
-    print("Making AIR Thermohydrographs...")
+    print("Making AIR Thermohydrographs with USGS flow (cms)...")
     for(j in 1:nrow(photolist_sub[c(1:test.subset),])){
       
       print(paste("making graph", j, "of", nrow(photolist_sub)))
@@ -43,7 +42,7 @@ fig.Hydroair.usgs <- function(test.subset = nrow(photolist_sub), air=T){
     }
   } else {
     
-    print("Making Hydrographs only")
+    print("Making Flow Hydrographs (cfs)")
     for(j in 1:nrow(photolist_sub[c(1:test.subset),])){
       
       print(paste("making graph", j, "of", nrow(photolist_sub)))

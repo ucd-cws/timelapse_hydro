@@ -46,11 +46,16 @@ load("./data/mfy_2016_photolist.rda")
 # merge with photolist_sub to make into one dataframe for everything
 dff<-merge(dfhr, photolist_sub[ ,c(7,1:2,4:6) ], by.x="datetime", by.y="timeround", all = F)
 
+save(dff, file = "./data/mfy_2016_gage_data.rda")
+
 summary(dff)
 
 # plots
 dfhr %>% ggplot(aes(x=datetime, y=flow_cms)) + geom_line(color="blue")
 dfhr %$% plot(x=datetime, y=flow_cms, col="blue", typ="l")
+
+
+# LOOP THROUGH PLOTS ------------------------------------------------------
 
 # for (var in c("dep_delay", "arr_delay")) {
 #   flights %>%

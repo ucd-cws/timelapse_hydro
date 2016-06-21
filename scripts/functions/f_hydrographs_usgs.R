@@ -3,19 +3,11 @@
 fig.Hydro.usgs <- function(test.subset = nrow(photolist_sub), cms=T){
   
   if(cms){
-  #   
-  #   if(ymax){
-  #     maxy <- ymax
-  #   } else {
-  #     maxy <- max(dff$flow_cms)
-  #   }
-  #   
-    print("Making Hydrographs only")
+    print("Making Flow Hydrographs (cms)")
     for(j in 1:nrow(photolist_sub[c(1:test.subset),])){
       
       print(paste("making graph", j, "of", nrow(photolist_sub)))
-      #print(paste("making graph", j, "of", test.subset))
-      
+
       png(paste(getwd(), "/output/temp/hydro/", photolist_sub[j,"photo"], sep = ""), 
           height=4, width=6, units="in", res=500, family="sans", bg = "transparent")
       
@@ -41,13 +33,7 @@ fig.Hydro.usgs <- function(test.subset = nrow(photolist_sub), cms=T){
     }
   } else {
     
-    # if(ymax){
-    #   maxy <- ymax
-    # } else {
-    #   maxy <- max(dff$flow_cfs)
-    # }
-
-    print("Making Hydrographs only")
+    print("Making Flow Hydrographs (cfs)")
     for(j in 1:nrow(photolist_sub[c(1:test.subset),])){
       
       print(paste("making graph", j, "of", nrow(photolist_sub)))

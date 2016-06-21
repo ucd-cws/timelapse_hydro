@@ -2,7 +2,7 @@
 
 ## Author: Ryan Peek
 ## Organization: UC Davis Center for Watershed Sciences
-## Date: 2016-02-25
+## Date: 2016-05-21
 
 ## Note: Script requires **imagemagick** to be in the system path for command calls 
 ## Similarly **ffmpeg** is required to be installed for stitching into mp4 file.
@@ -26,10 +26,7 @@ library(tidyr)
 
 source("./scripts/functions/f_projFolders.R")
 source("./scripts/functions/f_photoInfo_osx.R")
-source("./scripts/functions/f_thermohydro.R")
-source("./scripts/functions/f_hydrographs.R")
 source("./scripts/functions/f_photoComposite_osx.R")
-
 
 # CREATE FOLDERS FOR PROJECT ----------------------------------------------
 
@@ -42,10 +39,8 @@ proj.Folders(new=F)
 
 # OLD MOULTRIE: GATHER PHOTO INFO (DATETIME, BARO, BRIGHTNESS) ------------
 
-# p <- proc.time()
-
 # Select sitename (should be same name as folder the raw photos are in)
-site<-"NFA"
+site<-"MFY"
 
 ## list all photo files in the dir
 files <- list.files(path = paste0(getwd(),"/photos/",site), pattern = ".jpg",ignore.case = TRUE, full.names = T)
@@ -62,17 +57,9 @@ photolist$timeround <- floor_date(x = photolist$datetime, unit = "hour")
 ## Subset to photos to daytime images using exposure/brightness as proxy
 photolist_sub <- photolist[photolist$brightness > 40, ]
 
-## check runtime
-#runtime <- proc.time() - p
-#print(paste("finished in", format(runtime[3]/60, digits = 4), "minutes"))
-
 ## Save to .RData file so you don't have to do this again and wait
-#save(photolist, photolist_sub, file = "./data/nfa_20150805_photolist.rda")
-
-load("./data/nfa_20150805_photolist.rda")
-
-# 
-
+# save(photolist, photolist_sub, file = "./data/nfa_20150805_photolist.rda")
+# load("./data/nfa_20150805_photolist.rda")
 
 # NEW MOULTRIE: Gather Photoinfo using exiftools --------------------------
 
@@ -87,7 +74,8 @@ photolist<-readr::read_rds("./data/NFA_exif_2016-02-25.rds")
 # need to match times with 15 or hourly intervals: do that here
 interval = 15 ## set interval in minutes
 photolist$timeround <- as.POSIXct(round(as.double(photolist$datetime)/
-                                              (interval*60))*(interval*60),origin=(as.POSIXct(tz="GMT",'1970-01-01')))
+                                          (interval*60))*(interval*60),
+                                  origin=(as.POSIXct(tz="GMT",'1970-01-01')))
 head(photolist)
 
 # make sure all are distinct (i.e., number here matches total rows in df)
@@ -162,6 +150,12 @@ h(dfhr)
 dff<-merge(dfhr, photolist_sub[,c(1,3:5)], by.x="datetime", by.y="timeround", all = F)
 
 head(dff)
+
+# LOAD EXISTING DATA ------------------------------------------------------
+
+load("./data/mfy_2016_photolist.rda") # photo list
+load("./data/mfy_2016_gage_data.rda") # flow/logger data
+
 
 # TEST PLOTS --------------------------------------------------------------
 
@@ -274,24 +268,38 @@ grid.arrange(
 
 # THERMOHYDROGRAPH --------------------------------------------------------
 
+source("./scripts/functions/f_thermohydro.R")
+
 fig.Thermohydro()
 
 fig.Thermohydro(test.subset=10)
 
-# HYDROGRAPH ONLY ---------------------------------------------------------
+# USGS HYDROGRAPH ONLY ----------------------------------------------------
 
 ## USGS version: NEED flow_cms & flow_cfs columns
+
 source("./scripts/functions/f_hydrographs_usgs.R")
 
 fig.Hydro.usgs(cms = F, test.subset = 20)
 fig.Hydro.usgs(cms = F)
 
-## SOLINST version: NEED lev.avg column
+# USGS HYDROGRAPH ONLY ----------------------------------------------------
 
-fig.Hydro(test.subset=10) # short test
+## USGS version: NEED flow_cms & flow_cfs columns
 
-fig.Hydro()
+source("./scripts/functions/f_hydrographs_air_usgs.R")
+fig.Hydroair.usgs(air = T, test.subset = 20)
+fig.Hydroair.usgs(air = T)
 
+# SOLINST HYDROGRAPH ONLY -------------------------------------------------
+
+source("./scripts/functions/f_hydrographs.R")
+
+## SOLINST version: NEED lev.avg, flow_cfs, or flow_cms columns
+
+fig.Hydro(test.subset=10,stage = F, cms = F, yvar = "flow_cfs") # short test
+
+fig.Hydro(stage = F, cms = F, yvar = "flow_cfs") # short test
 
 # AIR TEMP ----------------------------------------------------------------
 
@@ -300,7 +308,6 @@ source("./scripts/functions/f_hydrographs_air_usgs.R")
 
 fig.Hydroair.usgs(air = T, test.subset = 100)
 fig.Hydroair.usgs(air = F)
-
 
 # OVERLAY IMAGES USING IMAGEMAGICK -composite COMMAND ---------------------
 
@@ -311,14 +318,14 @@ fig.Hydroair.usgs(air = F)
 p <- proc.time()
 
 # Run photoComposite function
-photoComposite(parallel = T, cores=3, thermo=T, site="MFY", plotlocation = "southeast")
+photoComposite(parallel = T, cores=3, thermo=F, site="MFY", plotlocation = "southeast")
 
 runtime <- proc.time() - p
 print(paste("finished in", format(runtime[3]/60, digits = 4), "minutes"))
 
-# OPTIONAL RENAME OF FILES ------------------------------------------------
+# RENAME OF FILES ------------------------------------------------
 
-## if you want to rename lots of files
+## PC: RENAME FILES
 dir_w_files<-"./output/composite"
 oldfiles<-list.files(dir_w_files,pattern = ".JPG",full.names = T)
 newfilenumbers<-seq(from = 1,to = length(oldfiles),by = 1)
@@ -331,18 +338,22 @@ for(i in 1:length(oldfiles)){
 file.rename(from = file.path(list.files(dir_w_files,pattern='.JPG',full.names = T)), 
             to = file.path(dir_w_files, newfilenames))
 
+## MACOSX: RENAME FILES
+## pictures need to be renamed in order so create dummy folder in composite folder
+system(command =  paste("mkdir ./output/composite_ordered")) # make a dir to rename photos 
+system(command = paste("cp ./output/composite/*JPG ./output/composite_ordered/")) # copy over
+system(command = paste('x=1; for i in output/composite_ordered/*JPG; do counter=$(printf %04d $x); ln "$i" output/composite_ordered/WORK"$counter".JPG; x=$(($x+1)); done'))
+
+
+
 # CREATE mp4 USING FFMPEG -------------------------------------------------
 
 ## move to dir with composite photos
 setwd("./output/composite/")
 
-## pictures need to be renamed in order so create dummy folder in composite folder
-# system(command =  paste("mkdir img_in_order")) # make a dir to rename photos 
-# system(command = paste('x=1; for i in *png; do counter=$(printf %04d $x); ln "$i" img_in_order/img"$counter".png; x=$(($x+1)); done'))
-
 ## now make movie mp4 (images need to be numerically ordered, default ~25 frames per sec)
-system(command = paste('ffmpeg -f image2 -i  PICT%04d.JPG -s 800x600 nfalapse_2016_short.mp4'))
+system(command = paste('ffmpeg -f image2 -i  PICT%04d.JPG -s 800x600 mfylapse_2016_short.mp4'))
 
 ## make slower (longer exposure per image, '-r ##' frames per second)
-system(command = paste('ffmpeg -f image2 -r 12 -i PICT%04d.JPG -s 800x600 tuolapse_2015_short.mp4'))
+system(command = paste('ffmpeg -f image2 -r 12 -i PICT%04d.JPG -s 800x600 ../videos/mfyHHtimelapse_2015_short.mp4'))
 
