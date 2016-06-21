@@ -16,6 +16,7 @@ library(gridExtra)
 library(foreach)
 library(doParallel)
 library(stringr)
+library(stringi)
 library(dplyr)
 library(magrittr)
 library(doMC)
@@ -27,6 +28,7 @@ library(tidyr)
 source("./scripts/functions/f_projFolders.R")
 source("./scripts/functions/f_photoInfo_osx.R")
 source("./scripts/functions/f_photoComposite_osx.R")
+source("./scripts/functions/f_exifInfo.R")
 
 # CREATE FOLDERS FOR PROJECT ----------------------------------------------
 
@@ -37,52 +39,49 @@ source("./scripts/functions/f_photoComposite_osx.R")
 ## run folder function
 proj.Folders(new=F)
 
-# OLD MOULTRIE: GATHER PHOTO INFO (DATETIME, BARO, BRIGHTNESS) ------------
+# BASE INFO ON PHOTOS & SITE ----------------------------------------------
 
-# Select sitename (should be same name as folder the raw photos are in)
-site<-"MFY"
+## Select sitename (should be same name as folder the raw photos are in)
+site<-"TUO"
 
-## list all photo files in the dir
-files <- list.files(path = paste0(getwd(),"/photos/",site), pattern = ".jpg",ignore.case = TRUE, full.names = T)
-#photo_numbers<-list.files(path = paste0(getwd(),"/photos/NFA"), pattern = ".jpg",ignore.case = TRUE, full.names = F) # photos only
+## Set working directory to photos
+path.to.photos<-"X:/sierra/Long_Term_Monitoring/Tuolumne/Timelapse/ClaveyConfluenceCam/20160619_confluencecam"
 
-## Run photoInfo function
-photolist <- photoInfo(parallel=F, test.subset = 10) # this is for testing
+## Date photos checked/downloaded
+datecheck = "2016-06-19"
 
-photolist <- photoInfo(cores = 3) # almost 40 min for ~3700 photos
+# CREATE PHOTOLIST AND GET PHOTO INFO: ----------------------------------------
 
-## round to whole hours
-photolist$timeround <- floor_date(x = photolist$datetime, unit = "hour")
+## Function to collect each photoname, datetime, brightness/exposure, baropressure, and airtemp. 
+## Make sure to check the date, site, and path above.
+## newMoultrie=TRUE if using M-990i Gen 2
+## newMoultrie=FALSE if using MFH-M65.
 
-## Subset to photos to daytime images using exposure/brightness as proxy
-photolist_sub <- photolist[photolist$brightness > 40, ]
+## Generate Photolist and Save to File
+exifInfo(site=site, path.to.photos = path.to.photos, newMoultrie = FALSE, datecheck = datecheck, saveInfo = T)
 
-## Save to .RData file so you don't have to do this again and wait
-# save(photolist, photolist_sub, file = "./data/nfa_20150805_photolist.rda")
-# load("./data/nfa_20150805_photolist.rda")
+## Load the photolist here (renames to "photolist" instead of 'SITE_exif_datecheck')
+photolist<-read_rds(path = paste0("./data/", site, "_exif_", datecheck, ".rds")) # from exifinfo
 
-# NEW MOULTRIE: Gather Photoinfo using exiftools --------------------------
-
-source("./scripts/functions/f_exifInfo.R")
-
-# if running function:
-exifInfo(site="NFA",path.to.photos = "~/Desktop/gamecam/nfa/", datecheck = "2016-02-25", saveInfo = T)
-
-# if just loading data
-photolist<-readr::read_rds("./data/NFA_exif_2016-02-25.rds")
-
-# need to match times with 15 or hourly intervals: do that here
-interval = 15 ## set interval in minutes
+## Match timelapse interval times here (in minutes), e.g., for hourly = 60, 15 minutes = 15
+interval = 60 ## set interval in minutes
 photolist$timeround <- as.POSIXct(round(as.double(photolist$datetime)/
                                           (interval*60))*(interval*60),
                                   origin=(as.POSIXct(tz="GMT",'1970-01-01')))
-head(photolist)
+
+head(photolist) # check the data
 
 # make sure all are distinct (i.e., number here matches total rows in df)
 ifelse(nrow(photolist)==dplyr::n_distinct(photolist$timeround), "All rows are distinct", "STOP, duplicates in data") 
 
 ## Subset to photos to daytime images using exposure/brightness as proxy
-photolist_sub <- photolist[photolist$exposure >= 4, ]
+photolist_sub <- photolist[photolist$exposure >= 4, ] # NEW CAMERAS (see notes line 53-56)
+
+## Subset to photos to daytime images using exposure/brightness as proxy
+photolist_sub <- photolist[photolist$exposure > 40, ] # OLD CAMERAS (see notes line 53-56)
+
+## Save to .Rdata file so you don't have to do this again and wait
+save(photolist, photolist_sub, file = paste0("./data/",site, "_photolist_", datecheck, ".rda"))
 
 # SUBSET DATE TO WINDOW OF INTEREST ---------------------------------------
 

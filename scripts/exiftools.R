@@ -29,9 +29,8 @@ library(stringi)
 
 # OLD MOULTRIE ------------------------------------------------------------
 
-path.to.photos<-"./photos/MFY/"
-#path.to.photos<-"/Volumes/projects/Long_Term_Monitoring/American_Yuba_Rivers/photos/NFYuba/TimeLapse/20140512/" # server
-site <- "MFY"
+path.to.photos<-"X:/sierra/Long_Term_Monitoring/Tuolumne/Timelapse/ClaveyConfluenceCam/20160619_confluencecam"
+site <- "TUO"
 
 # internal R call for old MOULTRIE
 exifinfo<-system(command = paste0('exiftool -r -s -T -FILE:FileName -EXIF:CreateDate -EXIF:Software -EXIF:ImageDescription ',path.to.photos),intern=T)
@@ -58,7 +57,7 @@ assign(df.name, df) # assign dataframe
 # save data
 #save(NFA_exif, file = paste0(root, "PROJECTS/timelapse_hydro/data/", site, "_exif.rda")) # save to rda
 write_rds(assign(df.name, df), path = paste0("./data/", site, "_exif.rds")) # save to rds
-write_rds(assign(df.name, df), path = paste0("./data/", site, "_exif_20140512.rds")) # for specific date
+write_rds(assign(df.name, df), path = paste0("./data/", site, "_exif_20160619.rds")) # for specific date
 
 # read in rds
 #nfa_exif<-read_rds(path = paste0(root, "PROJECTS/timelapse_hydro/data/", site, "_exif.rds"))

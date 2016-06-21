@@ -1,13 +1,13 @@
-## Timelapse Hydrography image compositer script: WINDOWS ----------------
+# Timelapse Hydrography image compositer script: WINDOWS ----------------
 
-## Author: Eric Holmes, Ryan Peek, and Nick Santos
+## Authors: Ryan Peek, Eric Holmes, and Nick Santos
 ## Organization: UC Davis Center for Watershed Sciences
-## Date: 2016/01/05
+## Date: 2016/06/22
 
-## Note: Script requires installation of imagemagick and for imagemagick to be on the system path for 
-## the command calls to work, similarly ffmpeg is required to stitch into mp4 file.
+## Note: Script requires installation of imagemagick and exiftools, and both must be on the system path for 
+## command calls to work, similarly ffmpeg is required to stitch into mp4 file.
 
-# LOAD LIBRARIES ----------------------------------------------------------
+# Load Libraries ----------------------------------------------------------
 
 library(ggplot2)
 library(scales)
@@ -16,67 +16,72 @@ library(gridExtra)
 library(foreach)
 library(doParallel)
 library(stringr)
+library(stringi)
 library(dplyr)
 library(magrittr)
+library(readr)
+library(tidyr)
 
 # Source Functions --------------------------------------------------------
 
 source("./scripts/functions/f_projFolders.R")
 source("./scripts/functions/f_photoInfo.R")
+source("./scripts/functions/f_exifInfo.R")
 source("./scripts/functions/f_thermohydro.R")
 source("./scripts/functions/f_hydrographs.R")
 source("./scripts/functions/f_photoComposite.R")
 
-# CREATE FOLDERS FOR PROJECT ----------------------------------------------
+# Check and Create Folders for Project ------------------------------------
 
 ## check if all proj folders are created in current working dir.
-## best if you navigate to root dir of interest first
-#setwd("./PROJECTS/timelapse_hydro")
-
 ## run folder function (new=FALSE means don't create new folders set, just check)
 proj.Folders(new=FALSE)
 
-# Gather datetime and brightness from timelapse photos --------------------
+# BASE INFO ON PHOTOS & SITE ----------------------------------------------
 
-p <- proc.time()
+## Select sitename (should be same name as folder the raw photos are in)
+site<-"TUO"
 
-# Select sitename (should be same name as folder the raw photos are in)
-site<-"MFY"
+## Set working directory to photos
+path.to.photos<-"X:/sierra/Long_Term_Monitoring/Tuolumne/Timelapse/ClaveyConfluenceCam/20160619_confluencecam"
 
-## list all photo files in the dir
-files <- list.files(path = paste0(getwd(),"/photos",site), pattern = ".jpg",ignore.case = TRUE, full.names = T)
+## Date photos checked/downloaded
+datecheck = "2016-06-19"
 
-## make a vector of just the photo_numbers
-photo_numbers<-basename(files) # ".jpg" only
+# Create Photolist & Get Info from Photos: ----------------------------------------
 
-## Run photoInfo function
-photolist <- photoInfo(parallel=F, test.subset = 20) # this is for testing
-photolist <- photoInfo(cores = 2) # almost 40 min for ~3700 photos
+## This section will collect the datetime and brightness/exposure from each photo. 
+## Make sure to check the date, site, and path above.
+    ## newMoultrie=TRUE if using M-990i Gen 2
+    ## newMoultrie=FALSE if using MFH-M65.
 
-## check runtime
-runtime <- proc.time() - p
-print(paste("finished in", format(runtime[3]/60, digits = 4), "minutes"))
+## Generate Photolist and Save to File
+exifInfo(site=site, path.to.photos = path.to.photos, newMoultrie = FALSE, datecheck = datecheck, saveInfo = T)
 
-## OR USE PREMADE PHOTOLIST
-mfy_exif<-read_rds(path = paste0("./data/", site, "_exif.rds")) # from exifinfo
-photolist<-mfy_exif
+## Load the photolist here (renames to "photolist" instead of 'SITE_exif_datecheck')
+photolist<-read_rds(path = paste0("./data/", site, "_exif_", datecheck, ".rds")) # from exifinfo
 
-## round to whole hours
-photolist$timeround <- floor_date(x = photolist$datetime, unit = "hour")
+## Match timelapse interval times here (in minutes), e.g., for hourly = 60, 15 minutes = 15
+interval = 60 ## set interval in minutes
+photolist$timeround <- as.POSIXct(round(as.double(photolist$datetime)/
+                                          (interval*60))*(interval*60),
+                                  origin=(as.POSIXct(tz="GMT",'1970-01-01')))
+
+head(photolist) # check the data
+
+# make sure all are distinct (i.e., number here matches total rows in df)
+ifelse(nrow(photolist)==dplyr::n_distinct(photolist$timeround), "All rows are distinct", "STOP, duplicates in data") 
 
 ## Subset to photos to daytime images using exposure/brightness as proxy
-photolist_sub <- photolist[photolist$exposure > 40, ]
+photolist_sub <- photolist[photolist$exposure >= 4, ] # NEW CAMERAS (see notes line 53-56)
+
+## Subset to photos to daytime images using exposure/brightness as proxy
+photolist_sub <- photolist[photolist$exposure > 40, ] # OLD CAMERAS (see notes line 53-56)
 
 ## Save to .Rdata file so you don't have to do this again and wait
-save(photolist, photolist_sub, file = "./data/mfy_2016_photolist.Rda")
+save(photolist, photolist_sub, file = paste0("./data/",site, "_photolist_", datecheck, ".rda"))
 
-# SUBSET DATE WINDOW OF INTEREST ------------------------------------------
-
-# load the photo data from a file/pre-run
-# load("data/NFA_20140805_photolist.rda")
-# load("./data/tuo_20151217_photolist.rda")
-# load("./data/nfa_20150805_photolist.rda")
-load("./data/mfy_2016_photolist.rda")
+# Subset Dates to Window of Interest ------------------------------------------
 
 ## If subsetting to certain date window use these lines
 start.date<-ymd_hms("2016-06-01 07:00:00")
