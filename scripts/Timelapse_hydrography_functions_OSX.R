@@ -1,13 +1,13 @@
 ## Timelapse Hydrography image compositer script: OSX ---------------------
 
-## Author: Ryan Peek
+## Authors: Ryan Peek, Eric Holmes, and Nick Santos
 ## Organization: UC Davis Center for Watershed Sciences
-## Date: 2016-05-21
+## Date: 2016/06/22
 
-## Note: Script requires **imagemagick** to be in the system path for command calls 
-## Similarly **ffmpeg** is required to be installed for stitching into mp4 file.
+## Note: Script requires installation of imagemagick and exiftools, and both must be on the system path for 
+## command calls to work, similarly ffmpeg is required to stitch into mp4 file.
 
-# LOAD LIBRARIES ----------------------------------------------------------
+# 1A. LOAD LIBRARIES & FUNCTIONS ---------------------------------------------
 
 library(ggplot2)
 library(scales)
@@ -23,23 +23,22 @@ library(doMC)
 library(readr)
 library(tidyr)
 
-# SOURCE FUNCTIONS --------------------------------------------------------
-
+# source functions
 source("./scripts/functions/f_projFolders.R")
 source("./scripts/functions/f_photoInfo_osx.R")
 source("./scripts/functions/f_photoComposite_osx.R")
 source("./scripts/functions/f_exifInfo.R")
 
-# CREATE FOLDERS FOR PROJECT ----------------------------------------------
+# 1B. CREATE FOLDERS FOR PROJECT ----------------------------------------------
 
-## check if all proj folders are created in current working dir.
-## best if you navigate to root dir of interest first
-#setwd("./PROJECTS/timelapse_hydro")
+## Only need to do this once, check if all proj folders are created in current 
+## working directory. Best to work from a project, and navigate to root dir. 
+## i.e., setwd("./PROJECTS/timelapse_hydro")
 
 ## run folder function
-proj.Folders(new=F)
+proj.Folders(new=F) # new=FALSE will just check, new=TRUE will create
 
-# BASE INFO ON PHOTOS & SITE ----------------------------------------------
+# 2. SET GLOBAL INFO: On Photo Folder & Site ------------------------------------
 
 ## Select sitename (should be same name as folder the raw photos are in)
 site<-"TUO"
@@ -50,12 +49,17 @@ path.to.photos<-"X:/sierra/Long_Term_Monitoring/Tuolumne/Timelapse/ClaveyConflue
 ## Date photos checked/downloaded
 datecheck = "2016-06-19"
 
-# CREATE PHOTOLIST AND GET PHOTO INFO: ----------------------------------------
+## 2A. If photo information has already been gathered, pre-load the RData files here:
+
+## Load photolist and photolist_sub data to environment
+load(file = paste0("./data/",site, "_photolist_", datecheck, ".rda"))
+
+# 3. CREATE PHOTOLIST: Get Photo Info ----------------------------------------
 
 ## Function to collect each photoname, datetime, brightness/exposure, baropressure, and airtemp. 
 ## Make sure to check the date, site, and path above.
-## newMoultrie=TRUE if using M-990i Gen 2
-## newMoultrie=FALSE if using MFH-M65.
+  ## newMoultrie=TRUE if using M-990i Gen 2
+  ## newMoultrie=FALSE if using MFH-M65.
 
 ## Generate Photolist and Save to File
 exifInfo(site=site, path.to.photos = path.to.photos, newMoultrie = FALSE, datecheck = datecheck, saveInfo = T)
@@ -83,7 +87,7 @@ photolist_sub <- photolist[photolist$exposure > 40, ] # OLD CAMERAS (see notes l
 ## Save to .Rdata file so you don't have to do this again and wait
 save(photolist, photolist_sub, file = paste0("./data/",site, "_photolist_", datecheck, ".rda"))
 
-# SUBSET DATE TO WINDOW OF INTEREST ---------------------------------------
+# 4. SUBSET to Window of Interest ---------------------------------------
 
 ## If subsetting to certain date window use these lines
 start.date<-ymd_hms("2015-11-01 09:00:00")
@@ -92,38 +96,35 @@ end.date<-ymd_hms("2015-12-17 09:00:00")
 ## use magrittr to filter by dates
 photolist_sub %<>% filter(datetime >= start.date & datetime <= end.date)
 
-# GET DATA FROM USGS and SUBSET TO PHOTOLIST ------------------------------
-
-source("./scripts/functions/f_USGS_15min.R")
-
-# get.USGS(11427000, "NFA", sdate = "2016-02-01", save15 = T)
-
-usgs<-readr::read_csv("data/NFA_2016-02-01_15min_USGS.csv")
-
-## subset to the photo list 
-Qsub <- na.omit(usgs[usgs$datetime >= range(photolist_sub$timeround)[1] & usgs$datetime <= range(photolist_sub$timeround)[2],])
-
-## merge with photolist_sub to make into one dataframe for everything
-dff<-merge(Qsub[,c(1:3,5,11:12)], photolist_sub[,c(7,2,5:6)], by.x="datetime", by.y="timeround", all = F)
-
-head(dff)
-
-# GET LOGGER DATA FROM CSV AND SUBSET TO PHOTOS ---------------------------
+# 5A. GET SOLINST LOGGER DATA ------------------------------
 
 ## get the logger file name of interest
-logger.name <- "2015_NFA_solinst_08_05.csv"
+logger.name <- "./data/loggers/2014_NFA_solinst_08_05.csv"
+interval <- 60 # set the interval to minutes
+skiplines <- 16
 
-## set interval in minutes
-interval = 15
+## read in data
+level <- read.csv(logger.name, stringsAsFactors = F, skip = skiplines) # check lines to skip
 
-## read in csv
-level <- read.csv(paste(getwd(), "/data/", logger.name, sep = ""), stringsAsFactors = F, skip = 13) # check lines to skip
-level$datetime <- as.POSIXct(paste(level$Date, level$Time), format = "%Y/%m/%d %H:%M:%S")
+## Make a datetime column
+
+## check for YMD vs. MDY
+# YMD
+# level$datetime <- as.POSIXct(paste(level$Date, level$Time), format = "%Y/%m/%d %H:%M:%S") # check to make sure YMD or MDY
+# MDY
+level$datetime <- as.POSIXct(paste(level$Date, level$Time), format = "%m/%d/%Y %H:%M:%S")
+
+## Round to interval (set above)
 level$timeround <- as.POSIXct(round(as.double(level$datetime)/(interval*60))*(interval*60),origin=(as.POSIXct(tz="GMT",'1970-01-01')))
-colnames(level)[4:5]<-toupper(colnames(level)[4:5])
+
+## check/change column names
+head(level)
+colnames(level)[5:6]<-toupper(colnames(level)[5:6]) # check to make sure these column numbers are correct, Level & Temperature
+
+# 5B. AGGREGATE TO HOURLY & COMPENSATE -----------------------------------------
 
 ## subset to the photo list 
-levsub <- na.omit(level[level$timeround >= range(photolist$timeround)[1] & level$timeround <= range(photolist$timeround)[2],])
+levsub <- na.omit(level[level$timeround >= range(photolist_sub$timeround)[1] & level$timeround <= range(photolist_sub$timeround)[2],])
 
 ## Make Hourly dataset to match photos
 dfhr<- levsub %>%
@@ -143,20 +144,96 @@ dfhr<- levsub %>%
                                             hour,":00"),format = "%Y-%m-%j %H:%M"))) %>%
   select(datetime,year,month,yday,lev.avg:temp.max) %>%
   as.data.frame()
-h(dfhr)
+
+# merge with photolist_sub to make into one dataframe for everything
+dff<-merge(dfhr, photolist_sub[ ,c(7,1:2,4:6) ], by.x="datetime", by.y="timeround", all = F)
+
+summary(dff) # the final merged data
+
+### COMPENSATION WITH GAME CAMERA BARO
+dff$baro_m<-convertBaro(x = dff$baro_inHg, type = "in", adj = 0) # converts inHg to m (and subtracts 9)
+
+# now subtract compensated baro from level column
+dff$lev.avg.comp <- dff$lev.avg - dff$baro_m
+
+# test plot
+ggplot(dff) + geom_line(aes(datetime, lev.avg-10), color="red") + 
+  geom_line(aes(datetime, lev.avg.comp), color="maroon", size=1.6, alpha=0.4)
+
+# 5C. WRITE PHOTO/LOGGER DATA TO RDA FILE -------------------------------------
+
+## Save to .Rdata file so you don't have to do this again and wait
+
+save(dff, file = paste0("./data/",site, "_combined_loggerphotos_", str_sub(floor_date(start.date, unit = "day"),end = -1),"_", str_sub(floor_date(end.date, unit = "day"),start=-5,end = -1), ".rda"))
+
+# 6A. CREATE LOGGER THERMOHYDROGRAPH  ----------------------------------------
+
+load(file = paste0("./data/",site, "_combined_loggerphotos_", str_sub(floor_date(start.date, unit = "day"),end = -1),"_", str_sub(floor_date(end.date, unit = "day"),start=-5,end = -1), ".rda"))
+
+source("./scripts/functions/f_thermohydro.R")
+
+fig.Thermohydro()
+fig.Thermohydro(test.subset=10)
+
+#runtime <- proc.time() - p
+#print(paste("finished in", format(runtime[3]/60, digits = 4), "minutes"))
+
+# 6B. CREATE LOGGER HYDROGRAPH ---------------------------------------------
+
+source("./scripts/functions/f_hydrographs.R")
+
+## SOLINST version: NEED lev.avg, flow_cfs, or flow_cms columns
+
+fig.Hydro(test.subset=10,stage = F, cms = F, yvar = "flow_cfs") # short test
+fig.Hydro(stage = F, cms = F, yvar = "flow_cfs") # short test
+
+# 7A. GET USGS DATA from USGS station --------------------------------------
+
+# might need to install packages: caTools, data.table, readr
+
+source("./scripts/functions/f_USGS_15min.R") # make sure data.table installed
+
+get.USGS(gage = 11427000, river = "NFA", sdate = "2011-01-01", edate = "2016-01-01", saveHrly = T, save15 = F) # 11727000 USGS for NFA, #11413000 is for NFY
+
+usgs<-readr::read_csv("data/usgs/NFA_2014-06-01_hourly_USGS.csv")
+
+## subset to the photo list 
+Qsub <- na.omit(usgs[usgs$datetime >= range(photolist_sub$timeround)[1] & usgs$datetime <= range(photolist_sub$timeround)[2],])
 
 ## merge with photolist_sub to make into one dataframe for everything
-dff<-merge(dfhr, photolist_sub[,c(1,3:5)], by.x="datetime", by.y="timeround", all = F)
+dff<-merge(Qsub, photolist_sub[,c(1,3:5)], by.x="datetime", by.y="timeround", all = F)
+
+## merge with photolist_sub to make into one dataframe for everything
+dff<-merge(Qsub[,c(1:3,5,11:12)], photolist_sub[,c(7,2,5:6)], by.x="datetime", by.y="timeround", all = F)
 
 head(dff)
 
-# LOAD EXISTING DATA ------------------------------------------------------
+# 7B. CREATE USGS HYDROGRAPH ----------------------------------------------
 
-load("./data/mfy_2016_photolist.rda") # photo list
-load("./data/mfy_2016_gage_data.rda") # flow/logger data
+## USGS version: NEED flow_cms & flow_cfs columns
 
+source("./scripts/functions/f_hydrographs_usgs.R")
 
-# TEST PLOTS --------------------------------------------------------------
+fig.Hydro.usgs(cms = F, test.subset = 20)
+fig.Hydro.usgs(cms = F)
+
+# 7C. CREATE USGS HYDROGRAPH & AIR ------------------------------------------------------
+
+## USGS version: NEED flow_cms & flow_cfs columns
+source("./scripts/functions/f_hydrographs_air_usgs.R")
+
+fig.Hydroair.usgs(air = T, test.subset = 20)
+fig.Hydroair.usgs(air = T)
+
+# 7D. CREATE USGS AIR TEMP GRAPH ------------------------------------------
+
+## USGS version
+source("./scripts/functions/f_hydrographs_air_usgs.R")
+
+fig.Hydroair.usgs(air = T, test.subset = 100)
+fig.Hydroair.usgs(air = F)
+
+# Make Test Thermohydro Plots --------------------------------------------------------------
 
 ## SET COLORS AND BREAKS FOR WATER TEMPERATURES
 breaksair<-(seq(0,36,4)) # best for air
@@ -218,7 +295,6 @@ grid.arrange(
           plot.background = element_rect(fill = "transparent",colour = NA))
 )
 
-
 # SOLINST plot to set colors
 grid.arrange(
   ggplot() + 
@@ -251,7 +327,7 @@ grid.arrange(
     scale_colour_gradientn(name=expression(paste("AirTemp(",degree,"C)")),colours=palette(palette), values=breaksair, 
                            rescaler = function(x, ...) x, oob = identity,limits=range(breaksair), breaks=breaksair, space="Lab") +
     geom_point(data = dff[dff$datetime <= photolist_sub$timeround[nrow(dff)],], 
-              aes(x = datetime, y = flow_cms, color=air_C), size = 1.3) +
+               aes(x = datetime, y = flow_cms, color=air_C), size = 1.3) +
     geom_point(data = dff[dff$datetime == photolist_sub$timeround[nrow(dff)],], 
                aes(x = datetime, y = flow_cms), pch=21, fill="skyblue1", size = 8) +
     #ylim(c(0,200))+
@@ -265,64 +341,25 @@ grid.arrange(
           plot.background = element_rect(fill = "transparent",colour = NA))
 )
 
-# THERMOHYDROGRAPH --------------------------------------------------------
+# 8. OVERLAY IMAGES with imagemagick --------------------------------
 
-source("./scripts/functions/f_thermohydro.R")
-
-fig.Thermohydro()
-
-fig.Thermohydro(test.subset=10)
-
-# USGS HYDROGRAPH ONLY ----------------------------------------------------
-
-## USGS version: NEED flow_cms & flow_cfs columns
-
-source("./scripts/functions/f_hydrographs_usgs.R")
-
-fig.Hydro.usgs(cms = F, test.subset = 20)
-fig.Hydro.usgs(cms = F)
-
-# USGS HYDROGRAPH ONLY ----------------------------------------------------
-
-## USGS version: NEED flow_cms & flow_cfs columns
-
-source("./scripts/functions/f_hydrographs_air_usgs.R")
-fig.Hydroair.usgs(air = T, test.subset = 20)
-fig.Hydroair.usgs(air = T)
-
-# SOLINST HYDROGRAPH ONLY -------------------------------------------------
-
-source("./scripts/functions/f_hydrographs.R")
-
-## SOLINST version: NEED lev.avg, flow_cfs, or flow_cms columns
-
-fig.Hydro(test.subset=10,stage = F, cms = F, yvar = "flow_cfs") # short test
-
-fig.Hydro(stage = F, cms = F, yvar = "flow_cfs") # short test
-
-# AIR TEMP ----------------------------------------------------------------
-
-## USGS version
-source("./scripts/functions/f_hydrographs_air_usgs.R")
-
-fig.Hydroair.usgs(air = T, test.subset = 100)
-fig.Hydroair.usgs(air = F)
-
-# OVERLAY IMAGES USING IMAGEMAGICK -composite COMMAND ---------------------
-
+## make composite of plot and photos with composite command.
 ## make sure you are in the root folder of your timelapse project folders
-## and photos are copied into folder in your photos folder within projects
-## i.e., "timelapse_hydro/photos/*SITE*/[images]"
 
 p <- proc.time()
 
 # Run photoComposite function
-photoComposite(parallel = T, cores=3, thermo=F, site="MFY", plotlocation = "southeast")
+photoComposite(parallel = T, cores=3, thermo=T, site="MFY", plotlocation = "northwest",
+               alpha = 0.6,
+               plotwidth = 700,
+               plotheight = 500,
+               gap = 12,
+               infobarheight = 125)
 
 runtime <- proc.time() - p
 print(paste("finished in", format(runtime[3]/60, digits = 4), "minutes"))
 
-# RENAME OF FILES ------------------------------------------------
+# 9. RENAME FILES ------------------------------------------------------
 
 ## PC: RENAME FILES
 dir_w_files<-"./output/composite"
@@ -343,9 +380,7 @@ system(command =  paste("mkdir ./output/composite_ordered")) # make a dir to ren
 system(command = paste("cp ./output/composite/*JPG ./output/composite_ordered/")) # copy over
 system(command = paste('x=1; for i in output/composite_ordered/*JPG; do counter=$(printf %04d $x); ln "$i" output/composite_ordered/WORK"$counter".JPG; x=$(($x+1)); done'))
 
-
-
-# CREATE mp4 USING FFMPEG -------------------------------------------------
+# 10. CREATE mp4 USING FFMPEG ---------------------------------------------
 
 ## move to dir with composite photos
 setwd("./output/composite/")
@@ -355,4 +390,3 @@ system(command = paste('ffmpeg -f image2 -i  PICT%04d.JPG -s 800x600 mfylapse_20
 
 ## make slower (longer exposure per image, '-r ##' frames per second)
 system(command = paste('ffmpeg -f image2 -r 12 -i PICT%04d.JPG -s 800x600 ../videos/mfyHHtimelapse_2015_short.mp4'))
-
