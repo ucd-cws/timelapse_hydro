@@ -90,18 +90,17 @@ save(photolist, photolist_sub, file = paste0("./data/",site, "_photolist_", date
 # 4. SUBSET to Window of Interest ---------------------------------------
 
 ## If subsetting to certain date window use these lines
-start.date<-ymd_hms("2015-11-01 09:00:00")
-end.date<-ymd_hms("2015-12-17 09:00:00")
+start.date<-ymd_hms("2016-02-01 07:00:00")
+end.date<-ymd_hms("2016-05-04 07:00:00")
 
 ## use magrittr to filter by dates
 photolist_sub %<>% filter(datetime >= start.date & datetime <= end.date)
 
 # 5A. GET SOLINST LOGGER DATA ------------------------------
 
-## get the logger file name of interest
-logger.name <- "./data/loggers/2014_NFA_solinst_08_05.csv"
-interval <- 60 # set the interval to minutes
-skiplines <- 16
+logger.name <- "./data/loggers/2016_CLA_solinst_06_20.csv"
+interval <- 15 # set the interval to minutes
+skiplines <- 11
 
 ## read in data
 level <- read.csv(logger.name, stringsAsFactors = F, skip = skiplines) # check lines to skip
@@ -157,8 +156,8 @@ dff$baro_m<-convertBaro(x = dff$baro_inHg, type = "in", adj = 0) # converts inHg
 dff$lev.avg.comp <- dff$lev.avg - dff$baro_m
 
 # test plot
-ggplot(dff) + geom_line(aes(datetime, lev.avg-10), color="red") + 
-  geom_line(aes(datetime, lev.avg.comp), color="maroon", size=1.6, alpha=0.4)
+ggplot(dff) + geom_line(aes(datetime, lev.avg-10), color="purple3", alpha=0.45, size=0.7) + 
+  geom_line(aes(datetime, lev.avg.comp), color="red2", size=0.5)
 
 # 5C. WRITE PHOTO/LOGGER DATA TO RDA FILE -------------------------------------
 
