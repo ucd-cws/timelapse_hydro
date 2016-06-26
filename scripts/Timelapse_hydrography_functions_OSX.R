@@ -156,8 +156,8 @@ dff$baro_m<-convertBaro(x = dff$baro_inHg, type = "in", adj = 0) # converts inHg
 dff$lev.avg.comp <- dff$lev.avg - dff$baro_m
 
 # test plot
-ggplot(dff) + geom_line(aes(datetime, lev.avg-10), color="purple3", alpha=0.45, size=0.7) + 
-  geom_line(aes(datetime, lev.avg.comp), color="red2", size=0.5)
+ggplot(dff) + geom_line(aes(datetime, lev.avg-10, color="Raw Stage"), alpha=0.45, size=0.7) + ylab("Stage (m)")+ xlab("")+ggtitle("Hourly Stage")+
+  geom_line(aes(datetime, lev.avg.comp, color="Compensated Stage"), size=0.5)+scale_color_manual(name="", values=c("Raw Stage"="purple3", "Compensated Stage"="red2"))+ theme(legend.justification=c(1,1), legend.position=c(1,1), legend.title=element_blank())
 
 # 5C. WRITE PHOTO/LOGGER DATA TO RDA FILE -------------------------------------
 
