@@ -9,9 +9,11 @@ photoComposite <- function(bgcol = "white",
                            thermo=TRUE,
                            site="",
                            parallel = TRUE, 
-                           cores = 2){
+                           cores = 2,
+                           path.to.photos=NA){
   
   path <- gsub(pattern = "/", replacement = "\\\\", x = getwd())
+  photopath<- gsub(pattern = "/", replacement = "\\\\", x =path.to.photos) 
 
   print("Overlay images")
   
@@ -28,7 +30,8 @@ photoComposite <- function(bgcol = "white",
         figfold<-"hydro"
       }
       
-      shell(cmd = paste("convert -size 2048x1536", " ", path, '\\photos\\',site,'\\', k, # copied photos to proj dir
+      shell(cmd = paste("convert -size 2048x1536", " ", photopath, '\\', k, # photos on SIERRA
+      #shell(cmd = paste("convert -size 2048x1536", " ", path, '\\photos\\',site,'\\', k, # copied photos to proj dir
                         
                         ## Plot and background rectangle placement
                         ' -draw', ' " fill ', 
