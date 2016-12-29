@@ -18,6 +18,15 @@
 ## exiftool -r -T '-*ExposureLuma2' PICT0001.JPG # on old moultries
 ## exiftool -r -s -G -Composite:LightValue . # new moultrie
 
+
+# THIS IS A PAUSE FUNCTION ------------------------------------------------
+
+Pause <- function () { 
+  cat("Hit <enter> to continue...")
+  readline()
+  invisible()
+}
+
 # Function Using exiftool ----------------------------------------------------
 
 exifInfo<-function( site, # location
@@ -54,6 +63,7 @@ exifInfo<-function( site, # location
     df<-df[,c(7,1:2,4:6)] # pull cols of interest
     
     print(head(df))
+    
     Pause()
     
     print(summary(df))

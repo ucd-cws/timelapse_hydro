@@ -42,18 +42,18 @@ proj.Folders(new=F) # new=FALSE will just check, new=TRUE will create
 # 2. SET GLOBAL INFO: On Photo Folder & Site ------------------------------------
 
 ## Select sitename (should be same name as folder the raw photos are in)
-site<-"TUO"
+site<-"NFA"
 
 ## Set working directory to photos
-path.to.photos<-"X:/sierra/Long_Term_Monitoring/Tuolumne/Timelapse/ClaveyConfluenceCam/20160619_confluencecam"
+path.to.photos<-"X:/Sierra/Long_Term_Monitoring/American_Yuba_Rivers/photos/NFAmerican/Timelapse/20161228_download"
 
 ## Date photos checked/downloaded
-datecheck = "2016-06-19"
+datecheck = "2016-12-28"
 
 ## 2A. If photo information has already been gathered, pre-load the RData files here:
 
 ## Load photolist and photolist_sub data to environment
-load(file = paste0("./data/",site, "_photolist_", datecheck, ".rda"))
+# load(file = paste0("./data/",site, "_photolist_", datecheck, ".rda"))
 
 # 3. CREATE PHOTOLIST: Get Photo Info ----------------------------------------
 
@@ -63,7 +63,7 @@ load(file = paste0("./data/",site, "_photolist_", datecheck, ".rda"))
     ## newMoultrie=FALSE if using MFH-M65.
 
 ## Generate Photolist and Save to File
-exifInfo(site=site, path.to.photos = path.to.photos, newMoultrie = FALSE, datecheck = datecheck, saveInfo = T)
+exifInfo(site=site, path.to.photos = path.to.photos, newMoultrie = TRUE, datecheck = datecheck, saveInfo = T)
 
 ## Load the photolist here (renames to "photolist" instead of 'SITE_exif_datecheck')
 photolist<-read_rds(path = paste0("./data/", site, "_exif_", datecheck, ".rds")) # from exifinfo
