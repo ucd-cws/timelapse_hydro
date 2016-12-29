@@ -2,7 +2,7 @@
 
 ## Authors: Ryan Peek, Eric Holmes, and Nick Santos
 ## Organization: UC Davis Center for Watershed Sciences
-## Date: 2016/06/22
+## Date: 2016/12/28
 
 ## Note: Script requires installation of imagemagick and exiftools, and both must be on the system path for 
 ## command calls to work, similarly ffmpeg is required to stitch into mp4 file.
@@ -69,7 +69,7 @@ exifInfo(site=site, path.to.photos = path.to.photos, newMoultrie = TRUE, dateche
 photolist<-read_rds(path = paste0("./data/", site, "_exif_", datecheck, ".rds")) # from exifinfo
 
 ## Match timelapse interval times here (in minutes), e.g., for hourly = 60, 15 minutes = 15
-interval = 60 ## set interval in minutes
+interval = 15 ## set interval in minutes
 photolist$timeround <- as.POSIXct(round(as.double(photolist$datetime)/
                                           (interval*60))*(interval*60),
                                   origin=(as.POSIXct(tz="GMT",'1970-01-01')))
