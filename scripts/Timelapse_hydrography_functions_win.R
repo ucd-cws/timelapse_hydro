@@ -238,6 +238,7 @@ source("./scripts/functions/f_hydrographs_air_usgs.R")
 fig.Hydroair.usgs(air = T, test.subset = 20)
 fig.Hydroair.usgs(air = T)
 
+
 # 7D. CREATE USGS AIR TEMP GRAPH ------------------------------------------
 
 ## USGS version
@@ -245,6 +246,7 @@ source("./scripts/functions/f_hydrographs_air_usgs.R")
 
 fig.Hydroair.usgs(air = T, test.subset = 100)
 fig.Hydroair.usgs(air = F)
+
 
 # Make Test Thermohydro Plots --------------------------------------------------------------
 
@@ -355,6 +357,7 @@ grid.arrange(
           plot.background = element_rect(fill = "transparent",colour = NA))
 )
 
+
 # 8. OVERLAY IMAGES with imagemagick -------------------------------------
 
 ## make composite of plot and photos with composite command.
@@ -363,12 +366,13 @@ grid.arrange(
 p <- proc.time()
 
 # Run photoComposite function
-photoComposite(parallel = T, cores=3, thermo=T, site="MFY", plotlocation = "northwest",
+photoComposite(parallel = T, cores=3, thermo=F, site="NFA", plotlocation = "northwest",
                alpha = 0.6,
                plotwidth = 700,
                plotheight = 500,
                gap = 12,
-               infobarheight = 125)
+               infobarheight = 125,
+               path.to.photos=path.to.photos)
 
 runtime <- proc.time() - p
 print(paste("finished in", format(runtime[3]/60, digits = 4), "minutes"))
