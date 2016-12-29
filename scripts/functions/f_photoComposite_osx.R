@@ -1,6 +1,6 @@
 ## The Composite Photo Function
 
-photoComposite <- function(bgcol = "white",
+photoComposite_osx <- function(bgcol = "white",
                            alpha = 0.5,
                            plotwidth = 800,
                            plotheight = 600,
