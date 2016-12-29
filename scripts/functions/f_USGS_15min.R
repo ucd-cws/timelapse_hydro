@@ -6,6 +6,8 @@
  # For 15 min data: 
   #  http://waterservices.usgs.gov/nwis/iv/?format=rdb&sites=11427000&startDT=2011-10-01&endDT=2012-08-23&parameterCd=00060,00065,00010 ##
 
+  # https://waterdata.usgs.gov/nwis/uv?cb_00060=on&cb_00065=on&format=rdb&site_no=11427000&period=&begin_date=2016-10-01&end_date=2016-12-28
+
  # For for multiple gages in one call "&sites=01646500,06306300"
 	#  http://waterservices.usgs.gov/nwis/iv/?format=rdb&sites=11413000,11427000&startDT=2009-10-01&endDT=2015-07-26&parameterCd=00060,00065,00010
 
@@ -43,22 +45,25 @@ get.USGS<-function(gage, river, sdate="2010-10-01", edate=Sys.Date(),
   gage = gage; sdate = sdate; river = river; edate=edate
   
   # read raw instantaneous data (15 min) 
-  rawdat<-fread(input = paste("http://waterservices.usgs.gov/nwis/iv/?format=rdb&sites=",
-                          gage,"&startDT=",sdate,"&endDT=",edate,
-                          "&parameterCd=00060,00065",sep=""), sep="\t", skip = 26) 
+  #https://waterdata.usgs.gov/nwis/uv?cb_00060=on&cb_00065=on&format=rdb&site_no=11427000&period=&begin_date=2016-10-01&end_date=2016-12-28""
+  rawdat<-fread(input = paste("https://waterdata.usgs.gov/nwis/uv?cb_00060=on&cb_00065=on&format=rdb&site_no=",
+                          gage,"&period=&begin_date=",sdate,
+                          "&end_date=",edate,sep=""), sep="\t", skip = 26) 
   
   
   # test line: paste("http://waterservices.usgs.gov/nwis/iv/?format=rdb&sites=",11427000,"&startDT=","2010-10-01","&endDT=","2015-07-30","&parameterCd=00060,00065",sep="")
   
-  riv.df <- as.data.frame(rawdat) # read data
+  riv.df <- as.data.frame(rawdat[-1,]) # read data and rm first row
   
   # adjust/format the datetime to POSIXct (good for plotting w ggplot)
   # to check time zones, use:   grep("^America", OlsonNames(),value=TRUE)
-  riv.df$datetime<-ymd_hm(paste(riv.df[[3]]," ",riv.df[[4]],sep=""),tz="America/Los_Angeles")
+  riv.df$datetime<-ymd_hm(riv.df$datetime,tz="America/Los_Angeles")
   
-  riv <-data.frame(riv.df[,c(2,9,5:8)]) # subset to columns of interest
+  riv <-data.frame(riv.df[,c(2:3,5:8)]) # subset to columns of interest
   colnames(riv)<- c("gage","datetime","flow_cfs","cd_00060","stage_ft", "cd_00065") # rename cols
+  riv[,3]<-as.numeric(riv[,3])
   riv[,4]<-as.factor(riv[,4])
+  riv[,5]<-as.numeric(riv[,5])
   riv[,6]<-as.factor(riv[,6])
   print(summary(riv))
   print(head(riv))

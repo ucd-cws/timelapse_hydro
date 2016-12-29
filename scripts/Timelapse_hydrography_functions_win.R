@@ -91,8 +91,8 @@ save(photolist, photolist_sub, file = paste0("./data/",site, "_photolist_", date
 # 4. SUBSET to Window of Interest ------------------------------------------
 
 ## If subsetting to certain date window use these lines
-start.date<-ymd_hms("2016-02-01 07:00:00")
-end.date<-ymd_hms("2016-05-04 07:00:00")
+start.date<-ymd_hms("2016-10-01 07:00:00")
+end.date<-ymd_hms("2016-12-20 07:00:00")
 
 photolist_sub %<>% filter(datetime >= start.date & datetime <= end.date)
 summary(photolist_sub)
@@ -195,13 +195,16 @@ source("./scripts/functions/f_hydrographs.R")
 fig.Hydro(test.subset=10,stage = F, cms = F, yvar = "flow_cfs") # short test
 fig.Hydro(stage = F, cms = F, yvar = "flow_cfs") # short test
 
+
 # 7A. GET USGS DATA from USGS station --------------------------------------
 
 # might need to install packages: caTools, data.table, readr
 
 source("./scripts/functions/f_USGS_15min.R") # make sure data.table installed
 
-get.USGS(gage = 11427000, river = "NFA", sdate = "2011-01-01", edate = "2016-01-01", saveHrly = T, save15 = F) # 11727000 USGS for NFA, #11413000 is for NFY
+
+get.USGS(gage = 11427000, river = "NFA", sdate = floor_date(start.date, unit = "day"),
+         edate = floor_date(end.date, unit = "day"), saveHrly = T, save15 = F) # 11727000 USGS for NFA, #11413000 is for NFY
 
 usgs<-readr::read_csv("data/usgs/NFA_2014-06-01_hourly_USGS.csv")
 
