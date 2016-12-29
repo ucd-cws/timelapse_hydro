@@ -53,7 +53,7 @@ datecheck = "2016-12-28"
 ## 2A. If photo information has already been gathered, pre-load the RData files here:
 
 ## Load photolist and photolist_sub data to environment
-# load(file = paste0("./data/",site, "_photolist_", datecheck, ".rda"))
+load(file = paste0("./data/",site, "_photolist_", datecheck, ".rda"))
 
 # 3. CREATE PHOTOLIST: Get Photo Info ----------------------------------------
 
@@ -204,16 +204,19 @@ source("./scripts/functions/f_USGS_15min.R") # make sure data.table installed
 
 
 get.USGS(gage = 11427000, river = "NFA", sdate = floor_date(start.date, unit = "day"),
-         edate = floor_date(end.date, unit = "day"), saveHrly = T, save15 = F) # 11727000 USGS for NFA, #11413000 is for NFY
+         edate = floor_date(end.date, unit = "day"), saveHrly = F, save15 = T) # 11727000 USGS for NFA, #11413000 is for NFY
 
-usgs<-readr::read_csv("data/usgs/NFA_2014-06-01_hourly_USGS.csv")
+# read an existing file in:
+usgs<-readr::read_csv(paste0("./data/usgs/",site, "_",floor_date(start.date, unit="day"),"_15min_USGS.csv"))
 
 ## subset to the photo list 
 Qsub <- na.omit(usgs[usgs$datetime >= range(photolist_sub$timeround)[1] & usgs$datetime <= range(photolist_sub$timeround)[2],])
 
+## OLD CAMERA
 ## merge with photolist_sub to make into one dataframe for everything
 dff<-merge(Qsub, photolist_sub[,c(1,3:5)], by.x="datetime", by.y="timeround", all = F)
 
+## NEW CAMERA
 ## merge with photolist_sub to make into one dataframe for everything (new camera?)
 dff<-merge(Qsub[,c(1:3,5,11:12)], photolist_sub[,c(7,2,5:6)], by.x="datetime", by.y="timeround", all = F)
 
