@@ -42,13 +42,13 @@ proj.Folders(new=F) # new=FALSE will just check, new=TRUE will create
 # 2. SET GLOBAL INFO: On Photo Folder & Site ------------------------------------
 
 ## Select sitename (should be same name as folder the raw photos are in)
-site<-"NFA"
+site<-"NFY"
 
 ## Set working directory to photos
-path.to.photos<-"X:/Sierra/Long_Term_Monitoring/American_Yuba_Rivers/photos/NFAmerican/Timelapse/20161228_download"
+path.to.photos<-"X:/sierra/Long_Term_Monitoring/American_Yuba_Rivers/photos/NFYuba/Timelapse/20170211"
 
 ## Date photos checked/downloaded
-datecheck = "2016-12-28"
+datecheck = "2017-02-11"
 
 ## 2A. If photo information has already been gathered, pre-load the RData files here:
 
@@ -72,7 +72,7 @@ photolist<-read_rds(path = paste0("./data/", site, "_exif_", datecheck, ".rds"))
 interval = 15 ## set interval in minutes
 photolist$timeround <- as.POSIXct(round(as.double(photolist$datetime)/
                                           (interval*60))*(interval*60),
-                                  origin=(as.POSIXct(tz="GMT",'1970-01-01')))
+                                  origin=(as.POSIXct(tz="",'1970-01-01'))) #tz="" is current/local zone
 
 head(photolist) # check the data
 
@@ -91,8 +91,8 @@ save(photolist, photolist_sub, file = paste0("./data/",site, "_photolist_", date
 # 4. SUBSET to Window of Interest ------------------------------------------
 
 ## If subsetting to certain date window use these lines
-start.date<-ymd_hms("2016-10-01 07:00:00")
-end.date<-ymd_hms("2016-12-20 07:00:00")
+start.date<-ymd_hms("2016-12-01 07:00:00")
+end.date<-ymd_hms("2017-02-14 07:00:00")
 
 photolist_sub %<>% filter(datetime >= start.date & datetime <= end.date)
 summary(photolist_sub)
@@ -203,7 +203,7 @@ fig.Hydro(stage = F, cms = F, yvar = "flow_cfs") # short test
 source("./scripts/functions/f_USGS_15min.R") # make sure data.table installed
 
 
-get.USGS(gage = 11427000, river = "NFA", sdate = floor_date(start.date, unit = "day"),
+get.USGS(gage = 11427000, river = "NFY", sdate = floor_date(start.date, unit = "day"),
          edate = floor_date(end.date, unit = "day"), saveHrly = F, save15 = T) # 11727000 USGS for NFA, #11413000 is for NFY
 
 # read an existing file in:
@@ -358,6 +358,7 @@ grid.arrange(
 )
 
 
+
 # 8. OVERLAY IMAGES with imagemagick -------------------------------------
 
 ## make composite of plot and photos with composite command.
@@ -366,12 +367,13 @@ grid.arrange(
 p <- proc.time()
 
 # Run photoComposite function
-photoComposite(parallel = T, cores=3, thermo=F, site="NFA", plotlocation = "northwest",
+
+photoComposite(parallel = T, cores=3, thermo=F, site="NFY", plotlocation = "northeast",
                alpha = 0.6,
                plotwidth = 700,
                plotheight = 500,
                gap = 12,
-               infobarheight = 125,
+               infobarheight = 105,
                path.to.photos=path.to.photos)
 
 runtime <- proc.time() - p

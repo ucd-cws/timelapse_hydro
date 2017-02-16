@@ -42,7 +42,7 @@ photoComposite <- function(bgcol = "white",
                                                               " -gravity northwest -geometry ", plotwidth, "x", plotheight, "+", 10, "+15 -composite",sep = "")
                         },
                         
-                        if(plotlocation == "northeast"){paste(' rectangle ', 2048 - plotwidth, ",", plotheight + gap, " ", 2048 - gap, ",", gap, '"', 
+                        if(plotlocation == "northeast"){paste(' rectangle ', 2688 - plotwidth - gap, ",", plotheight - gap, " ", 2688 - gap, ",", gap, '"', 
                                                               " ", path, '\\output\\temp\\', figfold,'\\', k,
                                                               " -gravity northeast -geometry ", plotwidth, "x", plotheight, "+", 10, "+15 -composite",sep = "")
                         },
@@ -53,11 +53,12 @@ photoComposite <- function(bgcol = "white",
                                                               " -gravity southwest -geometry ", plotwidth, "x", plotheight, "+", gap, "+", infobarheight + gap, " -composite",sep = "")
                         },
                         
-                        if(plotlocation == "southeast"){paste(' rectangle ', gap, ",", gap , " ", plotwidth, ",", plotheight, '"', 
+                       
+                        if(plotlocation == "southeast"){paste(' rectangle ', 2688 - gap, ",", gap , " ", plotwidth, ",", plotheight, '"',
                                                               " ", path, '\\output\\temp\\', figfold,'\\', k,
                                                               " -gravity southeast -geometry ", plotwidth, "x", plotheight, "+", gap, "+", infobarheight + gap, " -composite",sep = "")
                         },
-                        
+
                         ## Output composite image  
                         " ", path, '\\output\\composite\\', k, sep = ""))
     }
@@ -84,7 +85,7 @@ photoComposite <- function(bgcol = "white",
                                                               " -gravity northwest -geometry ", plotwidth, "x", plotheight, "+", 10, "+15 -composite",sep = "")
                         },
                         
-                        if(plotlocation == "northeast"){paste(' rectangle ', 2048 - plotwidth, ",", plotheight + gap, " ", 2048 - gap, ",", gap, '"', 
+                        if(plotlocation == "northeast"){paste(' rectangle ', 2688 - plotwidth - gap, ",", plotheight - gap, " ", 2688 - gap, ",", gap, '"', 
                                                               " ", path, '\\output\\temp\\', figfold,'\\', k,
                                                               " -gravity northeast -geometry ", plotwidth, "x", plotheight, "+", 10, "+15 -composite",sep = "")
                         },
