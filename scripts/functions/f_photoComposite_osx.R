@@ -39,7 +39,7 @@ photoComposite_osx <- function(bgcol = "white",
                                                                    " -gravity northwest -geometry ", plotwidth, "x", plotheight, "+", 10, "+15 -composite",sep = "")
                              },
                              
-                             if(plotlocation == "northeast"){paste(' rectangle ', 2048 - plotwidth, ",", plotheight + gap, " ", 2048 - gap, ",", gap, '"', 
+                             if(plotlocation == "northeast"){paste(' rectangle ', 1968, ",", gap, " ", 2048 - gap, ",", gap, '"', 
                                                                    " ", path, '//output//temp//', figfold,'//', k,
                                                                    " -gravity northeast -geometry ", plotwidth, "x", plotheight, "+", 10, "+15 -composite",sep = "")
                              },

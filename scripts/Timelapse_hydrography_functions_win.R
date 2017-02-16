@@ -203,7 +203,7 @@ fig.Hydro(stage = F, cms = F, yvar = "flow_cfs") # short test
 source("./scripts/functions/f_USGS_15min.R") # make sure data.table installed
 
 
-get.USGS(gage = 11427000, river = "NFY", sdate = floor_date(start.date, unit = "day"),
+get.USGS(gage = 11413000, river = "NFY", sdate = floor_date(start.date, unit = "day"),
          edate = floor_date(end.date, unit = "day"), saveHrly = F, save15 = T) # 11727000 USGS for NFA, #11413000 is for NFY
 
 # read an existing file in:
@@ -221,6 +221,36 @@ dff<-merge(Qsub, photolist_sub[,c(1,3:5)], by.x="datetime", by.y="timeround", al
 dff<-merge(Qsub[,c(1:3,5,11:12)], photolist_sub[,c(7,2,5:6)], by.x="datetime", by.y="timeround", all = F)
 
 head(dff)
+
+# get top 10 percent of daily avg flows
+dff$year <- year(dff$datetime)
+dff$month <- month(dff$datetime)
+dff$yday <- yday(dff$datetime)
+
+top10perc <- dff %>% group_by(yday) %>% 
+  summarize(avg_cfs=mean(flow_cfs)) %>% filter(avg_cfs > quantile(avg_cfs, 0.9))
+  #mutate(avg_cfs = mean(flow_cfs),
+  #       flow_cfs_perc=ifelse(avg_cfs > quantile(avg_cfs, 0.9) & max(avg_cfs), 1, 0))
+  #mutate("datetime"=ymd(strptime(paste0(year,"-", month,"-", yday), format = "%Y-%m-%j")))
+summary(top10perc)
+
+
+(tst1 <- ggplot(dff, aes(x = datetime, y = flow_cfs)) + geom_line(color = "grey30", size = 1) + theme_bw() + 
+  geom_ribbon(data = dff, 
+              aes(ymax = flow_cfs, ymin = min(dff$flow_cfs)), fill = "blue", alpha = .5) +
+  geom_line(data = dff, 
+            aes(x = datetime, y = flow_cfs), size = 2) +
+  #geom_label_repel(data=dff, aes(x=datetime, y=flow_cfs>9120, label=flow_cfs))+
+  geom_point(data=dff[dff$flow_cfs >= quantile(dff$flow_cfs, 0.9),], aes(x=datetime, y=flow_cfs), pch=16, col="red")+
+  
+  labs(list(x = "", y = "Discharge (cfs)")) +
+  theme(axis.text.x = element_text(face="bold", size=12),
+        axis.text.y = element_text(face="bold", size=12),
+        axis.title.y = element_text(face="bold", size=12),
+        panel.background = element_rect(fill = "transparent",colour = NA),
+        panel.grid.minor = element_blank(), 
+        panel.grid.major = element_blank(),
+        plot.background = element_rect(fill = "transparent",colour = NA)))
 
 # 7B. CREATE USGS HYDROGRAPH ---------------------------------------------------------
 
@@ -389,7 +419,7 @@ oldfiles<-list.files(dir_w_files,pattern = ".JPG",full.names = T)
 newfilenumbers<-seq(from = 1,to = length(oldfiles),by = 1)
 newfilenames<-vector()
 for(i in 1:length(oldfiles)){
-  newfilenames[i]<-paste0(sprintf("PICT%04d", i),".JPG")
+  newfilenames[i]<-paste0(sprintf("MFDC%04d", i),".JPG")
 }
 
 # now rename in numerical 4 digit order
@@ -411,7 +441,7 @@ setwd("./output/composite")
 ## MAKE SURE THE ONLY THING IN THE COMPOSITE FOLDER IS JPGs, no other files or ffmpeg will crash
 
 ## now make movie mp4 (images need to be numerically ordered, default ~25 frames per sec)
-shell(cmd = paste('ffmpeg -f image2 -i  PICT%04d.JPG -s 800x600 tuolapse_2015_short.mp4'))
+shell(cmd = paste('ffmpeg -f image2 -i  MFDC%04d.JPG -s 800x600 nfy_2017_short.mp4'))
 
 ## make slower (longer exposure per image, frames per second)
-shell(cmd = paste('ffmpeg -f image2 -r 12 -i PICT%04d.JPG -s 800x600 tuolapse_2015_short.mp4'))
+shell(cmd = paste('ffmpeg -f image2 -r 12 -i MFDC%04d.JPG -s 800x600 tuolapse_2015_short.mp4'))
