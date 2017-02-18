@@ -42,13 +42,14 @@ proj.Folders(new=F) # new=FALSE will just check, new=TRUE will create
 # 2. SET GLOBAL INFO: On Photo Folder & Site ------------------------------------
 
 ## Select sitename (should be same name as folder the raw photos are in)
-site<-"NFY"
+site<-"VN"
 
 ## Set working directory to photos
-path.to.photos<-"X:/sierra/Long_Term_Monitoring/American_Yuba_Rivers/photos/NFYuba/Timelapse/20170211"
+#path.to.photos<-"X:/sierra/Long_Term_Monitoring/American_Yuba_Rivers/photos/NFYuba/Timelapse/20170211"
+path.to.photos <- "X:/sierra/Meadows/VanNorden/Photos/timelapse/20161205_download/20161205_download"
 
 ## Date photos checked/downloaded
-datecheck = "2017-02-11"
+datecheck = "2016-12-05"
 
 ## 2A. If photo information has already been gathered, pre-load the RData files here:
 
@@ -277,6 +278,12 @@ source("./scripts/functions/f_hydrographs_air_usgs.R")
 fig.Hydroair.usgs(air = T, test.subset = 100)
 fig.Hydroair.usgs(air = F)
 
+# 7E. CREATE GAME CAM AIR TEMP GRAPH ------------------------------------------
+
+source("./scripts/functions/f_camgraph_air-baro.R")
+
+fig.camgraph(test.subset = 10, air = T)
+fig.camgraph(air = T)
 
 # Make Test Thermohydro Plots --------------------------------------------------------------
 
@@ -398,7 +405,7 @@ p <- proc.time()
 
 # Run photoComposite function
 
-photoComposite(parallel = T, cores=3, thermo=F, site="NFY", plotlocation = "northeast",
+photoComposite(parallel = T, cores=3, thermo=T, site="VN", plotlocation = "northwest",
                alpha = 0.6,
                plotwidth = 700,
                plotheight = 500,
@@ -414,7 +421,7 @@ print(paste("finished in", format(runtime[3]/60, digits = 4), "minutes"))
 # Should do this in order to make the imagemagick call work to stitch into video
 
 ## PC: RENAME FILES
-dir_w_files<-"./output/composite"
+dir_w_files<-"./output/composite/VN"
 oldfiles<-list.files(dir_w_files,pattern = ".JPG",full.names = T)
 newfilenumbers<-seq(from = 1,to = length(oldfiles),by = 1)
 newfilenames<-vector()
@@ -436,12 +443,12 @@ system(command = paste('x=1; for i in output/composite_ordered/*JPG; do counter=
 # 10. CREATE mp4 USING FFMPEG -------------------------------------------------
 
 ## move to dir with composite photos
-setwd("./output/composite")
+setwd("./output/composite/VN")
 
 ## MAKE SURE THE ONLY THING IN THE COMPOSITE FOLDER IS JPGs, no other files or ffmpeg will crash
 
 ## now make movie mp4 (images need to be numerically ordered, default ~25 frames per sec)
-shell(cmd = paste('ffmpeg -f image2 -i  MFDC%04d.JPG -s 800x600 nfy_2017_short.mp4'))
+shell(cmd = paste('ffmpeg -f image2 -i  MFDC%04d.JPG -s 800x600 VN_2016_nov-dec.mp4'))
 
 ## make slower (longer exposure per image, frames per second)
 shell(cmd = paste('ffmpeg -f image2 -r 12 -i MFDC%04d.JPG -s 800x600 tuolapse_2015_short.mp4'))
