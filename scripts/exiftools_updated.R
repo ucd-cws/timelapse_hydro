@@ -27,9 +27,9 @@ library(exiftoolr)
 # exiftoolr::install_exiftool() # one time
 
 
-# Photos ------------------------------------------------------------------
+# Photos Test ------------------------------------------------------------------
 
-
+# test that it works
 image_files <- dir(system.file("images", package = "exiftoolr"), 
                    full.names = TRUE)
 exifinfo <- exif_read(image_files)
@@ -47,11 +47,27 @@ exif_read(image_files, tags = fields_to_keep)
 # call exif
 (exifinfo <- exif_call(args=c("-r", "-s", "-T", "-n", "-q", "-FILE:FileName", "-EXIF:CreateDate", "-EXIF:MakerNoteUnknownText", "-Composite:LightValue"), path=image_files[1]))
 
-# test
+
+# Photo Browning Extract --------------------------------------------------
+
+
 path_to_photos <- "~/../Downloads/data_temp/T_LAPSE/"
 
 # check what can be read with exif?
 exif_read(path_to_photos, recursive = TRUE)
+
+# rename files to avi
+
+# Rename To AVI -----------------------------------------------------------
+
+library(fs)
+
+fspath <- path_expand("~/Downloads/data_temp/T_LAPSE/")
+img_files <- fs::dir_ls(path = fspath, type = "file", glob = 
+                          "*TLS")
+
+# change extension on everything to AVI
+fs::file_move(img_files, path_ext_set(img_files, ext = "AVI"))
 
 # Convert Images ----------------------------------------------------------
 
@@ -62,13 +78,14 @@ library(here)
 library(tidyr)
 
 # convert to png
-tst <- image_read_video(glue("{path_to_photos}/TIMEL0001.avi"), 
-                        fps = 6, format = "png")
+tst <- image_read_video(glue("{path_to_photos}/TIMEL0015.avi"), 
+                        fps = 5, format = "png")
 #tst_png <- image_convert(tst, "jpg")
 #head(tst_png)
 
 # write one
 image_write(tst[1], path = "~/../Downloads/data_temp/output/tst.jpg")
+
 # write all
 library(purrr)
 map(1:length(tst), ~image_write(tst[.x], path = glue("output/tst_{.x}.jpeg"), format = "jpeg"))
